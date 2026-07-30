@@ -1,0 +1,72 @@
+[
+  {
+    "id": "setup_1785419143975",
+    "name": "shogito-3-by-5",
+    "width": 3,
+    "height": 5,
+    "board": [
+      [
+        {
+          "id": "piece_7",
+          "type": "king",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_6",
+          "type": "lance",
+          "owner": "gote"
+        },
+        null
+      ],
+      [
+        {
+          "id": "piece_5",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_4",
+          "type": "gold",
+          "owner": "gote"
+        },
+        null
+      ],
+      [
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        {
+          "id": "piece_3",
+          "type": "gold",
+          "owner": "sente"
+        },
+        {
+          "id": "piece_2",
+          "type": "pawn",
+          "owner": "sente"
+        }
+      ],
+      [
+        null,
+        {
+          "id": "piece_1",
+          "type": "lance",
+          "owner": "sente"
+        },
+        {
+          "id": "piece_0",
+          "type": "king",
+          "owner": "sente"
+        }
+      ]
+    ],
+    "hands": {
+      "sente": [],
+      "gote": []
+    },
+    "promotionZoneSize": 2
+  }
+]
