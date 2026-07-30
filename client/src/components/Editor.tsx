@@ -244,9 +244,8 @@ export const Editor: React.FC = () => {
                   <div 
                     key={`cell-${x}-${y}`} 
                     onClick={() => handleCellClick(x, y)}
-                    className={(y < promotionZoneSize || y >= height - promotionZoneSize) ? 'center-zone' : ''}
+                    className={`cell ${(y < promotionZoneSize || y >= height - promotionZoneSize) ? 'center-zone' : ''}`}
                     style={{ 
-                      backgroundColor: 'var(--board-bg)',
                       aspectRatio: '1',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       cursor: 'pointer'

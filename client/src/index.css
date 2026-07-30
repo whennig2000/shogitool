@@ -27,7 +27,7 @@
   
   --board-bg: #eaddcf; /* Soft birch wood */
   --board-lines: #5c4d42; /* Ink brown */
-  --center-bg: rgba(234, 179, 8, 0.12); /* Middle ground contrast for promotion zones */
+  --center-bg: rgba(0, 0, 0, 0.26); /* 26% darker board color overlay */
 
   --theme-sente: #4a5568; /* Slate ink */
   --theme-gote: #9e7a7a; /* Dusty rose */
