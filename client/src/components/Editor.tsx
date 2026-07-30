@@ -154,7 +154,7 @@ export const Editor: React.FC = () => {
           <input type="text" value={name} onChange={e => setName(e.target.value)} style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }} />
         </div>
         
-        <div style={{ display: 'flex', gap: '2rem' }}>
+        <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem' }}>Breite (x)</label>
             <input type="number" min={3} max={15} value={width} onChange={e => updateSize(parseInt(e.target.value), height)} style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }} />
@@ -170,11 +170,11 @@ export const Editor: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '2rem' }}>
-        {/* Palette */}
-        <div className="lobby-card" style={{ flex: '0 0 200px' }}>
+      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+        {/* Sidebar */}
+        <div className="lobby-card" style={{ flex: '1 1 200px' }}>
           <h3>Werkzeuge</h3>
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
               <label>
                 <input type="radio" checked={selectedOwner === 'sente'} onChange={() => setSelectedOwner('sente')} />
                 Sente (Schwarz)
@@ -216,7 +216,7 @@ export const Editor: React.FC = () => {
         </div>
 
         {/* Board Preview */}
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: '1 1 300px' }}>
           <div style={{ marginBottom: '1rem' }}>
             <h4>Gote Hand (Weiß)</h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', minHeight: '40px', background: 'var(--surface)', padding: '0.5rem', borderRadius: '4px' }}>
@@ -246,7 +246,7 @@ export const Editor: React.FC = () => {
                     onClick={() => handleCellClick(x, y)}
                     className={(y < promotionZoneSize || y >= height - promotionZoneSize) ? 'center-zone' : ''}
                     style={{ 
-                      backgroundColor: (y < promotionZoneSize || y >= height - promotionZoneSize) ? 'rgba(234, 179, 8, 0.2)' : 'var(--board-bg)',
+                      backgroundColor: 'var(--board-bg)',
                       aspectRatio: '1',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       cursor: 'pointer'
