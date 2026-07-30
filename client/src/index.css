@@ -27,7 +27,7 @@
   
   --board-bg: #eaddcf; /* Soft birch wood */
   --board-lines: #5c4d42; /* Ink brown */
-  --center-bg: rgba(0, 0, 0, 0.26); /* 26% darker board color overlay */
+  --promotion-bg: rgba(0, 0, 0, 0.26); /* 26% darker board color overlay */
 
   --theme-sente: #4a5568; /* Slate ink */
   --theme-gote: #9e7a7a; /* Dusty rose */
@@ -150,8 +150,8 @@ body {
   position: relative;
 }
 
-.cell.center-zone {
-  background-image: linear-gradient(var(--center-bg), var(--center-bg));
+.cell.promotion-zone {
+  background-image: linear-gradient(var(--promotion-bg), var(--promotion-bg));
 }
 
 .cell:hover {

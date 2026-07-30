@@ -75,18 +75,18 @@ export const Board: React.FC<Props> = ({ board, selectedPos, validMoves, role, l
             const isSelected = selectedPos?.x === x && selectedPos?.y === y;
             const isValidMove = validMoves.some(m => m.x === x && m.y === y);
             
-            const isCenterZone = y >= actualPromotionZoneSize && y < board.length - actualPromotionZoneSize;
-            
+            const isPromotionZone = y < actualPromotionZoneSize || y >= board.length - actualPromotionZoneSize;
+
             return (
               <Cell 
-                key={`cell-${x}-${y}`} 
+                key={`${x}-${y}`} 
                 cell={cell} 
                 x={x} 
                 y={y} 
-                isSelected={isSelected}
+                isSelected={isSelected} 
                 isValidMove={isValidMove}
                 kanjiMode={kanjiMode}
-                isCenterZone={isCenterZone}
+                isPromotionZone={isPromotionZone}
                 onPress={onSelectCell}
               />
             );

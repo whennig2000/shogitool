@@ -9,14 +9,14 @@ interface Props {
   isSelected: boolean;
   isValidMove: boolean;
   kanjiMode: boolean;
-  isCenterZone?: boolean;
+  isPromotionZone?: boolean;
   onPress: (x: number, y: number) => void;
 }
 
-export const Cell: React.FC<Props> = ({ cell, x, y, isSelected, isValidMove, kanjiMode, isCenterZone, onPress }) => {
+export const Cell: React.FC<Props> = ({ cell, x, y, isSelected, isValidMove, kanjiMode, isPromotionZone, onPress }) => {
   return (
     <div
-      className={`cell ${isSelected ? 'selected' : ''} ${isValidMove ? 'valid-move' : ''} ${isCenterZone ? 'center-zone' : ''}`}
+      className={`cell ${isSelected ? 'selected' : ''} ${isValidMove ? 'valid-move' : ''} ${isPromotionZone ? 'promotion-zone' : ''}`}
       onClick={() => onPress(x, y)}
     >
       {cell && (
