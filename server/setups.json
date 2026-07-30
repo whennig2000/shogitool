@@ -68,5 +68,101 @@
       "gote": []
     },
     "promotionZoneSize": 2
+  },
+  {
+    "id": "setup_1785424201861",
+    "name": "shogito-5-by-5",
+    "width": 5,
+    "height": 5,
+    "board": [
+      [
+        null,
+        {
+          "id": "piece_14",
+          "type": "gold",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_13",
+          "type": "bishop",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_15",
+          "type": "king",
+          "owner": "gote"
+        },
+        null
+      ],
+      [
+        {
+          "id": "piece_10",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        null,
+        {
+          "id": "piece_11",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_12",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        {
+          "id": "piece_5",
+          "type": "pawn",
+          "owner": "sente"
+        },
+        {
+          "id": "piece_6",
+          "type": "pawn",
+          "owner": "sente"
+        },
+        null,
+        {
+          "id": "piece_7",
+          "type": "pawn",
+          "owner": "sente"
+        }
+      ],
+      [
+        null,
+        {
+          "id": "piece_4",
+          "type": "king",
+          "owner": "sente"
+        },
+        {
+          "id": "piece_9",
+          "type": "bishop",
+          "owner": "sente"
+        },
+        {
+          "id": "piece_8",
+          "type": "gold",
+          "owner": "sente"
+        },
+        null
+      ]
+    ],
+    "hands": {
+      "sente": [],
+      "gote": []
+    },
+    "promotionZoneSize": 2
   }
 ]
