@@ -12,7 +12,7 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/shogitool">
       <div className="app-container">
         <Routes>
           <Route path="/" element={<Lobby />} />

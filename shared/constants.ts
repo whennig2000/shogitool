@@ -1,4 +1,4 @@
-import { PieceType, Player, BoardState, Piece } from './types';
+import type { PieceType, Player, BoardState, Piece } from './types';
 
 let idCounter = 0;
 export const createPiece = (type: PieceType, owner: Player): Piece => ({

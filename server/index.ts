@@ -4,17 +4,21 @@ import { Server, Socket } from 'socket.io';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
+import { exec } from 'child_process';
 import { getInitialBoard, createPiece } from '../shared/constants';
 import { getValidMoves, getValidDrops, canPromote, getPromotedType, getDemotedType } from '../shared/movement';
 import type { GameState, Position, Piece } from '../shared/types';
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'https://whennig2000.github.io'],
+  methods: ['GET', 'POST']
+}));
 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: ['http://localhost:5173', 'https://whennig2000.github.io'],
     methods: ['GET', 'POST']
   }
 });
@@ -31,16 +35,6 @@ interface Room {
 }
 
 const rooms = new Map<string, Room>();
-
-const SETUPS_FILE = path.join(__dirname, 'setups.json');
-let globalSetups: any[] = [];
-try {
-  if (fs.existsSync(SETUPS_FILE)) {
-    globalSetups = JSON.parse(fs.readFileSync(SETUPS_FILE, 'utf-8'));
-  }
-} catch (err) {
-  console.error('Failed to load setups.json', err);
-}
 
 function executeBotMove(roomId: string, difficulty: string) {
   const room = rooms.get(roomId);
@@ -167,21 +161,6 @@ function executeBotMove(roomId: string, difficulty: string) {
 
 io.on('connection', (socket: Socket) => {
   console.log('User connected:', socket.id);
-
-  socket.on('getSetups', (cb) => {
-    cb(globalSetups);
-  });
-
-  socket.on('saveSetup', (setup, cb) => {
-    globalSetups.push(setup);
-    try {
-      fs.writeFileSync(SETUPS_FILE, JSON.stringify(globalSetups, null, 2), 'utf-8');
-    } catch (err) {
-      console.error('Failed to save setups.json', err);
-    }
-    io.emit('setupsUpdated', globalSetups);
-    if (cb) cb({ success: true });
-  });
 
   socket.on('createRoom', (data, cb) => {
     const { customSetup } = data || {};

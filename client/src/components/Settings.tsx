@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { ThemeConfig } from '../../../shared/types';
 
 interface SettingsProps {
@@ -7,14 +7,14 @@ interface SettingsProps {
 
 const DEFAULT_THEME: ThemeConfig = {
   id: 'default',
-  name: 'Klassisches Holz',
-  kanjiMode: false,
+  name: 'Pastel Zen',
+  kanjiMode: true,
   colors: {
-    boardBg: '#e2c192',
-    boardLines: '#2a2015',
-    centerBg: 'rgba(0,0,0,0.05)',
-    sentePrimary: '#3b82f6',
-    gotePrimary: '#ef4444'
+    boardBg: '#eaddcf',
+    boardLines: '#5c4d42',
+    centerBg: 'rgba(0,0,0,0.03)',
+    sentePrimary: '#4a5568',
+    gotePrimary: '#9e7a7a'
   }
 };
 
@@ -55,14 +55,6 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     });
   };
 
-  const timerOptions = [
-    { label: 'Ohne Timer', value: null },
-    { label: '3 Minuten', value: 3 * 60 },
-    { label: '5 Minuten', value: 5 * 60 },
-    { label: '10 Minuten', value: 10 * 60 },
-    { label: '15 Minuten', value: 15 * 60 },
-  ];
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '100%', textAlign: 'left' }}>
@@ -71,7 +63,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
           <button className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }} onClick={onClose}>✖</button>
         </div>
 
-        <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+        <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.05)', borderRadius: '8px' }}>
           <h3 style={{ marginBottom: '1rem' }}>🎨 Theme & Farben</h3>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>

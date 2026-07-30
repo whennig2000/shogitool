@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import type { BoardState, Piece, PieceType, Player, CustomSetup } from '../../../shared/types';
 import { createPiece } from '../../../shared/constants';
 import { PieceIcon } from './PieceIcon';
-import { socket } from './Lobby';
 
 const PIECE_TYPES: PieceType[] = ['pawn', 'lance', 'knight', 'silver', 'gold', 'bishop', 'rook', 'king'];
 
@@ -19,6 +18,10 @@ export const Editor: React.FC = () => {
   
   const [selectedType, setSelectedType] = useState<PieceType | 'eraser'>('king');
   const [selectedOwner, setSelectedOwner] = useState<Player>('sente');
+
+  const [showTokenPrompt, setShowTokenPrompt] = useState(false);
+  const [githubToken, setGithubToken] = useState(localStorage.getItem('github_token') || '');
+  const [isSaving, setIsSaving] = useState(false);
 
   const updateSize = (newWidth: number, newHeight: number) => {
     const newBoard = Array(newHeight).fill(null).map((_, y) => 
@@ -59,7 +62,73 @@ export const Editor: React.FC = () => {
     });
   };
 
+  const pushToGithub = async (setup: CustomSetup, token: string) => {
+    setIsSaving(true);
+    try {
+      // 1. Fetch current file to get SHA and existing setups
+      const apiUrl = 'https://api.github.com/repos/whennig2000/shogitool/contents/server/setups.json';
+      const getRes = await fetch(apiUrl, {
+        headers: { 'Authorization': `token ${token}` }
+      });
+      
+      let existingSetups: CustomSetup[] = [];
+      let sha = '';
+      if (getRes.ok) {
+        const data = await getRes.json();
+        sha = data.sha;
+        const content = decodeURIComponent(escape(atob(data.content)));
+        existingSetups = JSON.parse(content);
+      }
+
+      // 2. Append new setup
+      if (existingSetups.some(s => s.name === setup.name)) {
+        alert('Ein Setup mit diesem Namen existiert bereits auf GitHub.');
+        setIsSaving(false);
+        return;
+      }
+      existingSetups.push(setup);
+
+      // 3. Encode new content (unicode safe)
+      const newContent = btoa(unescape(encodeURIComponent(JSON.stringify(existingSetups, null, 2))));
+
+      // 4. PUT to GitHub
+      const putRes = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Add new setup: ${setup.name}`,
+          content: newContent,
+          sha: sha || undefined
+        })
+      });
+
+      if (!putRes.ok) {
+        throw new Error('Fehler beim Speichern (Token ungültig?)');
+      }
+
+      alert('Setup erfolgreich auf GitHub gespeichert!');
+      localStorage.setItem('github_token', token);
+      setShowTokenPrompt(false);
+      navigate('/');
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const saveSetup = () => {
+    if (!githubToken) {
+      setShowTokenPrompt(true);
+      return;
+    }
+    executeSave(githubToken);
+  };
+
+  const executeSave = (token: string) => {
     const setup: CustomSetup = {
       id: `setup_${Date.now()}`,
       name,
@@ -69,11 +138,7 @@ export const Editor: React.FC = () => {
       hands,
       promotionZoneSize
     };
-    
-    socket.emit('saveSetup', setup, () => {
-      alert('Setup saved to server!');
-      navigate('/');
-    });
+    pushToGithub(setup, token);
   };
 
   return (
@@ -83,24 +148,24 @@ export const Editor: React.FC = () => {
         <button className="btn btn-secondary" onClick={() => navigate('/')}>🔙 Zurück zur Lobby</button>
       </div>
 
-      <div className="lobby-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
         <div>
-          <label>Setup Name: </label>
-          <input type="text" value={name} onChange={e => setName(e.target.value)} style={{ padding: '0.5rem', marginLeft: '0.5rem' }} />
+          <label style={{ display: 'block', marginBottom: '0.5rem' }}>Name der Aufstellung</label>
+          <input type="text" value={name} onChange={e => setName(e.target.value)} style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }} />
         </div>
         
         <div style={{ display: 'flex', gap: '2rem' }}>
           <div>
-            <label>Breite (Width): {width}</label>
-            <input type="range" min="3" max="15" value={width} onChange={e => updateSize(parseInt(e.target.value), height)} />
+            <label style={{ display: 'block', marginBottom: '0.5rem' }}>Breite (x)</label>
+            <input type="number" min={3} max={15} value={width} onChange={e => updateSize(parseInt(e.target.value), height)} style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }} />
           </div>
           <div>
-            <label>Höhe (Height): {height}</label>
-            <input type="range" min="3" max="15" value={height} onChange={e => updateSize(width, parseInt(e.target.value))} />
+            <label style={{ display: 'block', marginBottom: '0.5rem' }}>Höhe (y)</label>
+            <input type="number" min={5} max={15} value={height} onChange={e => updateSize(width, parseInt(e.target.value))} style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }} />
           </div>
           <div>
-            <label>Beförderungszone (Reihen): {promotionZoneSize}</label>
-            <input type="range" min="0" max={Math.floor(height/2)} value={promotionZoneSize} onChange={e => setPromotionZoneSize(parseInt(e.target.value))} />
+            <label style={{ display: 'block', marginBottom: '0.5rem' }}>Beförderungszone (Reihen)</label>
+            <input type="number" min={0} max={5} value={promotionZoneSize} onChange={e => setPromotionZoneSize(parseInt(e.target.value))} style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }} />
           </div>
         </div>
       </div>
@@ -123,7 +188,10 @@ export const Editor: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
             <button 
               className="btn"
-              style={{ background: selectedType === 'eraser' ? '#475569' : '#1e293b' }}
+              style={{ 
+                background: selectedType === 'eraser' ? 'var(--primary)' : 'var(--surface)', 
+                color: selectedType === 'eraser' ? 'white' : 'var(--text)' 
+              }}
               onClick={() => setSelectedType('eraser')}
             >
               🧹 Eraser
@@ -133,7 +201,8 @@ export const Editor: React.FC = () => {
                 key={pt} 
                 className="btn" 
                 style={{ 
-                  background: selectedType === pt ? '#475569' : '#1e293b',
+                  background: selectedType === pt ? 'var(--primary)' : 'var(--surface)',
+                  color: selectedType === pt ? 'white' : 'var(--text)',
                   display: 'flex', justifyContent: 'center' 
                 }}
                 onClick={() => setSelectedType(pt)}
@@ -205,9 +274,31 @@ export const Editor: React.FC = () => {
             </div>
           </div>
           
-          <button className="btn" style={{ marginTop: '2rem', width: '100%' }} onClick={saveSetup}>💾 Setup Speichern</button>
+          <button className="btn" style={{ marginTop: '2rem', width: '100%' }} onClick={saveSetup} disabled={isSaving}>
+            {isSaving ? '⏳ Speichere auf GitHub...' : '💾 Setup auf GitHub Speichern'}
+          </button>
         </div>
       </div>
+
+      {showTokenPrompt && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>GitHub Token benötigt</h3>
+            <p style={{ opacity: 0.8, marginBottom: '1rem', fontSize: '0.9rem' }}>Um Boards direkt in deinem Repository (whennig2000/shogitool) zu speichern, wird ein Personal Access Token mit Repo-Rechten benötigt.</p>
+            <input 
+              type="password" 
+              placeholder="ghp_xxxxxxxxxxxx" 
+              value={githubToken}
+              onChange={e => setGithubToken(e.target.value)}
+              style={{ width: '100%', padding: '0.8rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px', marginBottom: '1rem' }}
+            />
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button className="btn btn-secondary" onClick={() => setShowTokenPrompt(false)}>Abbrechen</button>
+              <button className="btn" onClick={() => executeSave(githubToken)}>Speichern</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

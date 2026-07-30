@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import type { BoardState, Position, Player } from '../../../shared/types';
 import { Cell } from './Cell';
-import { getKanjiMode } from './Settings';
 
 interface Props {
   board: BoardState;
@@ -10,18 +9,12 @@ interface Props {
   role: Player;
   lastMove?: { from?: Position; to: Position } | null;
   promotionZoneSize?: number;
+  kanjiMode: boolean;
   onSelectCell: (x: number, y: number) => void;
 }
 
-export const Board: React.FC<Props> = ({ board, selectedPos, validMoves, role, lastMove, promotionZoneSize, onSelectCell }) => {
+export const Board: React.FC<Props> = ({ board, selectedPos, validMoves, role, lastMove, promotionZoneSize, kanjiMode, onSelectCell }) => {
   const actualPromotionZoneSize = promotionZoneSize ?? (board.length >= 9 ? 3 : 1);
-  const [kanjiMode, setKanjiMode] = useState(getKanjiMode());
-
-  useEffect(() => {
-    const handleTheme = () => setKanjiMode(getKanjiMode());
-    window.addEventListener('themeChanged', handleTheme);
-    return () => window.removeEventListener('themeChanged', handleTheme);
-  }, []);
 
   const renderLastMoveArrow = () => {
     if (!lastMove) return null;

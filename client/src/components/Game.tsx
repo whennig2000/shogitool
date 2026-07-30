@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { socket } from './Lobby';
-import type { BoardState, GameState, Piece, Player, Position } from '../../../shared/types';
+import type { GameState, Piece, Player, Position } from '../../../shared/types';
 import { getValidMoves, canPromote, getPromotedType, getDemotedType, getValidDrops, isKingInCheck, hasAnyLegalMoves } from '../../../shared/movement';
 import { createPiece } from '../../../shared/constants';
 import { getKanjiMode } from './Settings';
@@ -336,7 +336,7 @@ export const Game = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ fontWeight: 'bold' }}>Gegner: {gameState.playerNames[opponentRole]}</div>
             {gameState.timeLeft && (
-              <div style={{ background: '#1e293b', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', fontFamily: 'monospace', fontSize: '1.5rem', color: gameState.turn === opponentRole ? '#ef4444' : 'white' }}>
+              <div style={{ background: '#1e293b', padding: '0.5rem 1rem', borderRadius: '4px', fontFamily: 'monospace', fontSize: '1.5rem', color: gameState.turn === opponentRole ? '#ef4444' : 'white' }}>
                 {formatTime(gameState.timeLeft[opponentRole])}
               </div>
             )}
@@ -367,7 +367,7 @@ export const Game = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ fontWeight: 'bold' }}>Du: {gameState.playerNames[role]}</div>
             {gameState.timeLeft && (
-              <div style={{ background: '#1e293b', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', fontFamily: 'monospace', fontSize: '1.5rem', color: gameState.turn === role ? '#ef4444' : 'white' }}>
+              <div style={{ background: '#1e293b', padding: '0.5rem 1rem', borderRadius: '4px', fontFamily: 'monospace', fontSize: '1.5rem', color: gameState.turn === role ? '#ef4444' : 'white' }}>
                 {formatTime(gameState.timeLeft[role])}
               </div>
             )}

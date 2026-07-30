@@ -1,4 +1,4 @@
-import { BoardState, Position, PieceType, Player, Piece } from './types';
+import type { BoardState, Position, PieceType, Player, Piece } from './types';
 
 export const isOutOfBounds = (board: BoardState, x: number, y: number): boolean => {
   return x < 0 || x >= board[0].length || y < 0 || y >= board.length;
