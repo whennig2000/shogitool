@@ -175,39 +175,41 @@ export const Editor: React.FC = () => {
         <div className="lobby-card" style={{ flex: '0 0 200px' }}>
           <h3>Werkzeuge</h3>
           <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-            <label>
-              <input type="radio" checked={selectedOwner === 'sente'} onChange={() => setSelectedOwner('sente')} />
-              Sente (Blau)
-            </label>
-            <label>
-              <input type="radio" checked={selectedOwner === 'gote'} onChange={() => setSelectedOwner('gote')} />
-              Gote (Rot)
-            </label>
+              <label>
+                <input type="radio" checked={selectedOwner === 'sente'} onChange={() => setSelectedOwner('sente')} />
+                Sente (Schwarz)
+              </label>
+              <label>
+                <input type="radio" checked={selectedOwner === 'gote'} onChange={() => setSelectedOwner('gote')} />
+                Gote (Weiß)
+              </label>
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-            <button 
-              className="btn"
-              style={{ 
-                background: selectedType === 'eraser' ? 'var(--primary)' : 'var(--surface)', 
-                color: selectedType === 'eraser' ? 'white' : 'var(--text)' 
-              }}
-              onClick={() => setSelectedType('eraser')}
-            >
+              <button 
+                className="btn"
+                style={{ 
+                  background: selectedType === 'eraser' ? 'rgba(234, 179, 8, 0.3)' : 'var(--surface)', 
+                  color: 'var(--text)',
+                  border: selectedType === 'eraser' ? '1px solid #eab308' : '1px solid transparent'
+                }} 
+                onClick={() => setSelectedType('eraser')}
+              >
               🧹 Eraser
             </button>
             {PIECE_TYPES.map(pt => (
               <button 
                 key={pt} 
-                className="btn" 
+                className="btn"
                 style={{ 
-                  background: selectedType === pt ? 'var(--primary)' : 'var(--surface)',
-                  color: selectedType === pt ? 'white' : 'var(--text)',
-                  display: 'flex', justifyContent: 'center' 
+                  background: selectedType === pt ? 'rgba(234, 179, 8, 0.3)' : 'var(--surface)',
+                  color: 'var(--text)',
+                  border: selectedType === pt ? '1px solid #eab308' : '1px solid transparent',
+                  display: 'flex', justifyContent: 'center'
                 }}
                 onClick={() => setSelectedType(pt)}
               >
-                <PieceIcon type={pt} color={selectedOwner === 'sente' ? 'var(--primary)' : 'var(--secondary)'} size={24} kanjiMode={true} />
+                <PieceIcon type={pt} color={selectedOwner === 'sente' ? 'var(--theme-sente)' : 'var(--theme-gote)'} size={24} kanjiMode={true} />
               </button>
             ))}
           </div>
@@ -216,11 +218,11 @@ export const Editor: React.FC = () => {
         {/* Board Preview */}
         <div style={{ flex: 1 }}>
           <div style={{ marginBottom: '1rem' }}>
-            <h4>Gote Hand (Rot)</h4>
+            <h4>Gote Hand (Weiß)</h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', minHeight: '40px', background: 'var(--surface)', padding: '0.5rem', borderRadius: '4px' }}>
               {hands.gote.map((p, i) => (
                 <div key={p.id} onClick={() => removeHandPiece('gote', i)} style={{ cursor: 'pointer' }}>
-                  <PieceIcon type={p.type} color="var(--secondary)" kanjiMode={true} />
+                  <PieceIcon type={p.type} color="var(--theme-gote)" kanjiMode={true} />
                 </div>
               ))}
               <button className="btn btn-secondary" style={{ padding: '0 0.5rem' }} onClick={() => addHandPiece('gote', selectedType !== 'eraser' ? selectedType : 'pawn')}>+</button>
@@ -242,10 +244,9 @@ export const Editor: React.FC = () => {
                   <div 
                     key={`cell-${x}-${y}`} 
                     onClick={() => handleCellClick(x, y)}
-                    className={(y >= promotionZoneSize && y < height - promotionZoneSize) ? 'center-zone' : ''}
+                    className={(y < promotionZoneSize || y >= height - promotionZoneSize) ? 'center-zone' : ''}
                     style={{ 
-                      backgroundColor: 'var(--board-bg)',
-                      backgroundImage: (y >= promotionZoneSize && y < height - promotionZoneSize) ? 'linear-gradient(var(--center-bg), var(--center-bg))' : 'none',
+                      backgroundColor: (y < promotionZoneSize || y >= height - promotionZoneSize) ? 'rgba(234, 179, 8, 0.2)' : 'var(--board-bg)',
                       aspectRatio: '1',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       cursor: 'pointer'
@@ -263,11 +264,11 @@ export const Editor: React.FC = () => {
           </div>
 
           <div style={{ marginTop: '1rem' }}>
-            <h4>Sente Hand (Blau)</h4>
+            <h4>Sente Hand (Schwarz)</h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', minHeight: '40px', background: 'var(--surface)', padding: '0.5rem', borderRadius: '4px' }}>
               {hands.sente.map((p, i) => (
                 <div key={p.id} onClick={() => removeHandPiece('sente', i)} style={{ cursor: 'pointer' }}>
-                  <PieceIcon type={p.type} color="var(--primary)" kanjiMode={true} />
+                  <PieceIcon type={p.type} color="var(--theme-sente)" kanjiMode={true} />
                 </div>
               ))}
               <button className="btn btn-secondary" style={{ padding: '0 0.5rem' }} onClick={() => addHandPiece('sente', selectedType !== 'eraser' ? selectedType : 'pawn')}>+</button>

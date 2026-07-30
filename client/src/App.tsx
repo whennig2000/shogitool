@@ -19,6 +19,9 @@ function App() {
           <Route path="/room/:roomId" element={<Game />} />
           <Route path="/editor" element={<Editor />} />
         </Routes>
+        <footer style={{ marginTop: '3rem', textAlign: 'center', opacity: 0.6, fontSize: '0.9rem' }}>
+          created by @whennig2000, assisted by Antigravity, powered by Render and Github Pages, credits to Shogi and variational board games (Shogito)
+        </footer>
       </div>
     </BrowserRouter>
   );

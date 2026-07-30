@@ -23,7 +23,7 @@ export const Komadai: React.FC<Props> = ({ player, pieces, selectedPiece, onSele
   return (
     <div className={`komadai ${isCurrentTurn ? 'active' : ''}`}>
       <div className="komadai-title">
-        {player === 'sente' ? 'Blau' : 'Rot'} Bank {isMyRole ? '(Du)' : ''}
+        {player === 'sente' ? 'Schwarz' : 'Weiß'} Bank {isMyRole ? '(Du)' : ''}
       </div>
       <div className="komadai-pieces">
         {uniqueTypes.map(type => {
@@ -38,8 +38,8 @@ export const Komadai: React.FC<Props> = ({ player, pieces, selectedPiece, onSele
               onClick={() => isMyRole && isCurrentTurn && onSelect(samplePiece)}
               style={{ cursor: (isMyRole && isCurrentTurn) ? 'pointer' : 'not-allowed' }}
             >
-              <div style={{ transform: player === 'gote' ? 'rotate(180deg)' : 'none', display: 'flex', alignItems: 'center' }}>
-                <PieceIcon type={type} color={player === 'sente' ? '#3b82f6' : '#ef4444'} size={35} kanjiMode={kanjiMode} />
+              <div style={{ transform: 'none', display: 'flex', alignItems: 'center' }}>
+                <PieceIcon type={type} color={player === 'sente' ? 'var(--theme-sente)' : 'var(--theme-gote)'} size={35} kanjiMode={kanjiMode} />
               </div>
               {count > 1 && (
                 <div className="badge">{count}</div>

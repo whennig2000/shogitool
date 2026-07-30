@@ -34,14 +34,14 @@ export const Board: React.FC<Props> = ({ board, selectedPos, validMoves, role, l
       return (
         <svg viewBox={viewBox} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}>
           <defs>
-            <marker id="arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto" overflow="visible">
-              <polygon points="0 0, 4 2, 0 4" fill="rgba(234, 179, 8, 0.8)" stroke="rgba(0,0,0,0.6)" strokeWidth="0.5" strokeLinejoin="round" />
+            <marker id="arrowhead" markerWidth="3" markerHeight="3" refX="2.5" refY="1.5" orient="auto" overflow="visible">
+              <polygon points="0 0, 3 1.5, 0 3" fill="rgba(234, 179, 8, 0.8)" stroke="rgba(0,0,0,0.6)" strokeWidth="0.5" strokeLinejoin="round" />
             </marker>
           </defs>
           {/* Outline */}
-          <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(0,0,0,0.6)" strokeWidth="10" strokeLinecap="round" />
+          <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(0,0,0,0.6)" strokeWidth="5" strokeLinecap="round" />
           {/* Main Arrow */}
-          <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(234, 179, 8, 0.8)" strokeWidth="6" strokeLinecap="round" markerEnd="url(#arrowhead)" />
+          <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(234, 179, 8, 0.8)" strokeWidth="3" strokeLinecap="round" markerEnd="url(#arrowhead)" />
         </svg>
       );
     } else {

@@ -292,9 +292,9 @@ export const Game = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
         <h2 className="title" style={{ fontSize: '2rem', margin: 0 }}>Raum: {roomId}</h2>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <div>
             Du bist: <strong style={{ color: role === 'sente' ? 'var(--theme-sente)' : 'var(--theme-gote)' }}>{gameState.playerNames[role]}</strong>
           </div>
