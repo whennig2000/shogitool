@@ -9,11 +9,11 @@ interface Props {
   role: Player;
   lastMove?: { from?: Position; to: Position } | null;
   promotionZoneSize?: number;
-  kanjiMode: boolean;
+  displayMode?: 'kanji' | 'symbols' | 'images';
   onSelectCell: (x: number, y: number) => void;
 }
 
-export const Board: React.FC<Props> = ({ board, selectedPos, validMoves, role, lastMove, promotionZoneSize, kanjiMode, onSelectCell }) => {
+export const Board: React.FC<Props> = ({ board, selectedPos, validMoves, role, lastMove, promotionZoneSize, displayMode = 'kanji', onSelectCell }) => {
   const actualPromotionZoneSize = promotionZoneSize ?? (board.length >= 9 ? 3 : 1);
 
   const renderLastMoveArrow = () => {
@@ -85,7 +85,7 @@ export const Board: React.FC<Props> = ({ board, selectedPos, validMoves, role, l
                 y={y} 
                 isSelected={isSelected} 
                 isValidMove={isValidMove}
-                kanjiMode={kanjiMode}
+                displayMode={displayMode}
                 isPromotionZone={isPromotionZone}
                 onPress={onSelectCell}
               />

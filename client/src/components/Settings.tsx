@@ -8,7 +8,7 @@ interface SettingsProps {
 const DEFAULT_THEME: ThemeConfig = {
   id: 'default',
   name: 'Pastel Zen',
-  kanjiMode: true,
+  displayMode: 'kanji',
   colors: {
     boardBg: '#eaddcf',
     boardLines: '#5c4d42',
@@ -34,8 +34,9 @@ export const loadTheme = (): ThemeConfig => {
   return saved ? JSON.parse(saved) : DEFAULT_THEME;
 };
 
-export const getKanjiMode = (): boolean => {
-  return loadTheme().kanjiMode;
+export const getDisplayMode = (): 'kanji' | 'symbols' | 'images' => {
+  const mode = loadTheme().displayMode;
+  return mode || 'kanji'; // Fallback for old saved themes
 };
 
 export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
@@ -68,12 +69,15 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
             <label>Figuren-Stil:</label>
-            <button 
-              className="btn btn-secondary" 
-              onClick={() => saveTheme({ ...theme, kanjiMode: !theme.kanjiMode })}
+            <select 
+              value={theme.displayMode || 'kanji'}
+              onChange={e => saveTheme({ ...theme, displayMode: e.target.value as 'kanji' | 'symbols' | 'images' })}
+              style={{ padding: '0.5rem', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }}
             >
-              {theme.kanjiMode ? '🈴 Kanji' : '♟️ Modern (Symbole)'}
-            </button>
+              <option value="kanji">🈴 Kanji</option>
+              <option value="symbols">♟️ Symbole</option>
+              <option value="images">🖼️ Bilder</option>
+            </select>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

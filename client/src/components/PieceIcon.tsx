@@ -5,11 +5,41 @@ interface Props {
   type: PieceType;
   color: string;
   size?: number;
-  kanjiMode?: boolean;
+  displayMode?: 'kanji' | 'symbols' | 'images';
 }
 
-export const PieceIcon: React.FC<Props> = ({ type, color, size = 30, kanjiMode = false }) => {
-  if (kanjiMode) {
+const IMAGE_MAP: Record<PieceType, string> = {
+  king: 'oh-sho.png',
+  rook: 'hi-sha.png',
+  bishop: 'kaku-gyo.png',
+  gold: 'kin-sho.png',
+  silver: 'gin-sho.png',
+  knight: 'kei-ma.png',
+  lance: 'kyo-sha.png',
+  pawn: 'fu-hyo.png',
+  promoted_rook: 'ryo-oh.png',
+  promoted_bishop: 'uma.png',
+  promoted_silver: 'nari-gin.png',
+  promoted_knight: 'nari-kei.png',
+  promoted_lance: 'nari-kyo.png',
+  promoted_pawn: 'to-kin.png'
+};
+
+export const PieceIcon: React.FC<Props> = ({ type, color, size = 30, displayMode = 'kanji' }) => {
+  if (displayMode === 'images') {
+    const baseUrl = import.meta.env.BASE_URL;
+    return (
+      <img 
+        src={`${baseUrl}icons/${IMAGE_MAP[type]}`} 
+        width={size} 
+        height={size} 
+        style={{ objectFit: 'contain' }} 
+        alt={type} 
+      />
+    );
+  }
+
+  if (displayMode === 'kanji') {
     let kanji = '';
     switch (type) {
       case 'king': kanji = '王'; break;

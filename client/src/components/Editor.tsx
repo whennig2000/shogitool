@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import type { BoardState, Piece, PieceType, Player, CustomSetup } from '../../../shared/types';
 import { createPiece } from '../../../shared/constants';
 import { PieceIcon } from './PieceIcon';
+import { getDisplayMode } from './Settings';
 
 const PIECE_TYPES: PieceType[] = ['pawn', 'lance', 'knight', 'silver', 'gold', 'bishop', 'rook', 'king'];
 
 export const Editor: React.FC = () => {
   const navigate = useNavigate();
+  const displayMode = getDisplayMode();
   
   const [name, setName] = useState('My Custom Setup');
   const [width, setWidth] = useState(9);
@@ -209,7 +211,7 @@ export const Editor: React.FC = () => {
                 }}
                 onClick={() => setSelectedType(pt)}
               >
-                <PieceIcon type={pt} color={selectedOwner === 'sente' ? 'var(--theme-sente)' : 'var(--theme-gote)'} size={24} kanjiMode={true} />
+                <PieceIcon type={pt} color={selectedOwner === 'sente' ? 'var(--theme-sente)' : 'var(--theme-gote)'} size={24} displayMode={displayMode} />
               </button>
             ))}
           </div>
@@ -222,7 +224,7 @@ export const Editor: React.FC = () => {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', minHeight: '40px', background: 'var(--surface)', padding: '0.5rem', borderRadius: '4px' }}>
               {hands.gote.map((p, i) => (
                 <div key={p.id} onClick={() => removeHandPiece('gote', i)} style={{ cursor: 'pointer' }}>
-                  <PieceIcon type={p.type} color="var(--theme-gote)" kanjiMode={true} />
+                  <PieceIcon type={p.type} color="var(--theme-gote)" displayMode={displayMode} />
                 </div>
               ))}
               <button className="btn btn-secondary" style={{ padding: '0 0.5rem' }} onClick={() => addHandPiece('gote', selectedType !== 'eraser' ? selectedType : 'pawn')}>+</button>
@@ -253,7 +255,7 @@ export const Editor: React.FC = () => {
                   >
                     {cell && (
                       <div style={{ transform: cell.owner === 'gote' ? 'rotate(180deg)' : 'none' }}>
-                        <PieceIcon type={cell.type} color={cell.owner === 'sente' ? 'var(--theme-sente)' : 'var(--theme-gote)'} kanjiMode={true} />
+                        <PieceIcon type={cell.type} color={cell.owner === 'sente' ? 'var(--theme-sente)' : 'var(--theme-gote)'} displayMode={displayMode} />
                       </div>
                     )}
                   </div>
@@ -267,7 +269,7 @@ export const Editor: React.FC = () => {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', minHeight: '40px', background: 'var(--surface)', padding: '0.5rem', borderRadius: '4px' }}>
               {hands.sente.map((p, i) => (
                 <div key={p.id} onClick={() => removeHandPiece('sente', i)} style={{ cursor: 'pointer' }}>
-                  <PieceIcon type={p.type} color="var(--theme-sente)" kanjiMode={true} />
+                  <PieceIcon type={p.type} color="var(--theme-sente)" displayMode={displayMode} />
                 </div>
               ))}
               <button className="btn btn-secondary" style={{ padding: '0 0.5rem' }} onClick={() => addHandPiece('sente', selectedType !== 'eraser' ? selectedType : 'pawn')}>+</button>

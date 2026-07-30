@@ -68,7 +68,7 @@ export interface CustomSetup {
 export interface ThemeConfig {
   id: string;
   name: string;
-  kanjiMode: boolean;
+  displayMode: 'kanji' | 'symbols' | 'images';
   colors: {
     boardBg: string;
     boardLines: string;

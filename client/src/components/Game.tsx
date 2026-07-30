@@ -4,10 +4,9 @@ import { socket } from './Lobby';
 import type { GameState, Piece, Player, Position } from '../../../shared/types';
 import { getValidMoves, canPromote, getPromotedType, getDemotedType, getValidDrops, isKingInCheck, hasAnyLegalMoves } from '../../../shared/movement';
 import { createPiece } from '../../../shared/constants';
-import { getKanjiMode } from './Settings';
+import { Settings, getDisplayMode } from './Settings';
 import { Board } from './Board';
 import { Komadai } from './Komadai';
-import { Settings } from './Settings';
 
 interface ChatMessage {
   role: string;
@@ -23,7 +22,7 @@ export const Game = () => {
   const [gameState, setGameState] = useState<GameState | null>(null);
   
   // Settings
-  const [kanjiMode, setKanjiMode] = useState(getKanjiMode());
+  const [displayMode, setDisplayMode] = useState(getDisplayMode());
   const [showGameSettings, setShowGameSettings] = useState(false);
   const [showThemeSettings, setShowThemeSettings] = useState(false);
   const [myNameInput, setMyNameInput] = useState('');
@@ -44,9 +43,11 @@ export const Game = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleTheme = () => setKanjiMode(getKanjiMode());
-    window.addEventListener('themeChanged', handleTheme);
-    return () => window.removeEventListener('themeChanged', handleTheme);
+    const handleThemeChange = () => {
+      setDisplayMode(getDisplayMode());
+    };
+    window.addEventListener('themeChanged', handleThemeChange);
+    return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, []);
 
   useEffect(() => {
@@ -347,8 +348,8 @@ export const Game = () => {
             selectedPiece={null}
             onSelect={() => {}}
             isCurrentTurn={gameState.turn === opponentRole}
-            isMyRole={false}
-            kanjiMode={kanjiMode}
+            role={role}
+            displayMode={displayMode}
           />
         </div>
 
@@ -358,7 +359,7 @@ export const Game = () => {
           validMoves={validMoves}
           role={role}
           promotionZoneSize={gameState.promotionZoneSize}
-          kanjiMode={kanjiMode}
+          displayMode={displayMode}
           lastMove={gameState.lastMove}
           onSelectCell={handleSelectBoard}
         />
@@ -378,8 +379,8 @@ export const Game = () => {
             selectedPiece={selectedDropPiece}
             onSelect={handleSelectCaptured}
             isCurrentTurn={gameState.turn === role}
-            isMyRole={true}
-            kanjiMode={kanjiMode}
+            role={role}
+            displayMode={displayMode}
           />
 
           <div className="chat-container">

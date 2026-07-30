@@ -8,12 +8,12 @@ interface Props {
   y: number;
   isSelected: boolean;
   isValidMove: boolean;
-  kanjiMode: boolean;
+  displayMode: 'kanji' | 'symbols' | 'images';
   isPromotionZone?: boolean;
   onPress: (x: number, y: number) => void;
 }
 
-export const Cell: React.FC<Props> = ({ cell, x, y, isSelected, isValidMove, kanjiMode, isPromotionZone, onPress }) => {
+export const Cell: React.FC<Props> = ({ cell, x, y, isSelected, isValidMove, displayMode, isPromotionZone, onPress }) => {
   return (
     <div
       className={`cell ${isSelected ? 'selected' : ''} ${isValidMove ? 'valid-move' : ''} ${isPromotionZone ? 'promotion-zone' : ''}`}
@@ -21,7 +21,7 @@ export const Cell: React.FC<Props> = ({ cell, x, y, isSelected, isValidMove, kan
     >
       {cell && (
         <div className={`piece ${cell.owner === 'gote' ? 'gote' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
-          <PieceIcon type={cell.type} color={cell.owner === 'sente' ? 'var(--theme-sente)' : 'var(--theme-gote)'} size={40} kanjiMode={kanjiMode} />
+          <PieceIcon type={cell.type} color={cell.owner === 'sente' ? 'var(--theme-sente)' : 'var(--theme-gote)'} size={40} displayMode={displayMode} />
         </div>
       )}
       {isValidMove && !cell && (
