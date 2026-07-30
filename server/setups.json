@@ -1,0 +1,191 @@
+[
+  {
+    "id": "setup_1785398029152",
+    "name": "My Custom Setup",
+    "width": 9,
+    "height": 9,
+    "board": [
+      [
+        null,
+        null,
+        {
+          "id": "piece_17",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_18",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_19",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_20",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_21",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        {
+          "id": "piece_9",
+          "type": "rook",
+          "owner": "sente"
+        },
+        {
+          "id": "piece_10",
+          "type": "rook",
+          "owner": "sente"
+        },
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        {
+          "id": "piece_16",
+          "type": "rook",
+          "owner": "sente"
+        },
+        null,
+        {
+          "id": "piece_8",
+          "type": "rook",
+          "owner": "sente"
+        },
+        null,
+        {
+          "id": "piece_11",
+          "type": "rook",
+          "owner": "sente"
+        },
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        {
+          "id": "piece_15",
+          "type": "rook",
+          "owner": "sente"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        {
+          "id": "piece_14",
+          "type": "rook",
+          "owner": "sente"
+        },
+        {
+          "id": "piece_13",
+          "type": "rook",
+          "owner": "sente"
+        },
+        {
+          "id": "piece_12",
+          "type": "rook",
+          "owner": "sente"
+        }
+      ]
+    ],
+    "hands": {
+      "sente": [
+        {
+          "id": "piece_1",
+          "type": "rook",
+          "owner": "sente"
+        },
+        {
+          "id": "piece_3",
+          "type": "rook",
+          "owner": "sente"
+        },
+        {
+          "id": "piece_5",
+          "type": "rook",
+          "owner": "sente"
+        },
+        {
+          "id": "piece_7",
+          "type": "rook",
+          "owner": "sente"
+        }
+      ],
+      "gote": []
+    },
+    "promotionZoneSize": 2
+  }
+]
