@@ -137,7 +137,11 @@ function executeBotMove(roomId: string, difficulty: string) {
     return true; // King is safe
   });
 
-  if (legalMoves.length === 0) {
+  const isPuzzleSolved = difficulty === 'puzzle' && room.puzzleState && room.puzzleState.currentMoveIndex >= room.puzzleState.availablePuzzles[room.puzzleState.currentPuzzleIndex].solution.length;
+  
+  if (legalMoves.length === 0 || isPuzzleSolved) {
+    state.winner = 'sente';
+    io.to(roomId).emit('stateUpdated', state);
     if (difficulty === 'puzzle' && room.puzzleState) {
       io.to(roomId).emit('chatMessage', { 
         role: 'bot', 
