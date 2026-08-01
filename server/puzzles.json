@@ -350,5 +350,120 @@
       "gote": []
     },
     "promotionZoneSize": 3
+  },
+  {
+    "id": "puzzle_1785603212185",
+    "name": "sp2",
+    "boardId": "setup_1785419143975",
+    "botRole": "gote",
+    "movesToMate": 2,
+    "solution": [
+      {
+        "type": "move",
+        "from": {
+          "x": 2,
+          "y": 1
+        },
+        "to": {
+          "x": 2,
+          "y": 0
+        },
+        "pieceType": "promoted_pawn"
+      },
+      {
+        "type": "move",
+        "from": {
+          "x": 0,
+          "y": 3
+        },
+        "to": {
+          "x": 0,
+          "y": 4
+        },
+        "pieceType": "gold"
+      },
+      {
+        "type": "move",
+        "from": {
+          "x": 2,
+          "y": 0
+        },
+        "to": {
+          "x": 1,
+          "y": 0
+        },
+        "pieceType": "promoted_pawn"
+      }
+    ],
+    "width": 3,
+    "height": 5,
+    "board": [
+      [
+        {
+          "id": "piece_7",
+          "type": "king",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_2",
+          "type": "promoted_pawn",
+          "owner": "sente"
+        },
+        null
+      ],
+      [
+        {
+          "id": "piece_5",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_1",
+          "type": "lance",
+          "owner": "sente"
+        },
+        null
+      ],
+      [
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null
+      ],
+      [
+        {
+          "id": "piece_4",
+          "type": "gold",
+          "owner": "gote"
+        },
+        null,
+        {
+          "id": "piece_0",
+          "type": "king",
+          "owner": "sente"
+        }
+      ]
+    ],
+    "hands": {
+      "sente": [
+        {
+          "id": "piece_80",
+          "type": "lance",
+          "owner": "sente"
+        }
+      ],
+      "gote": [
+        {
+          "id": "piece_81",
+          "type": "gold",
+          "owner": "gote"
+        }
+      ]
+    },
+    "promotionZoneSize": 2
   }
 ]
