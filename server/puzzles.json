@@ -22,7 +22,11 @@
         }
       ],
       [
-        null,
+        {
+          "id": "piece_5",
+          "type": "pawn",
+          "owner": "gote"
+        },
         {
           "id": "piece_1",
           "type": "lance",
@@ -62,11 +66,6 @@
         {
           "id": "piece_6",
           "type": "lance",
-          "owner": "gote"
-        },
-        {
-          "id": "piece_5",
-          "type": "pawn",
           "owner": "gote"
         },
         {
