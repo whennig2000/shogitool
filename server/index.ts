@@ -362,7 +362,9 @@ io.on('connection', (socket: Socket) => {
       
       if (difficulty === 'puzzle') {
         try {
-          const res = await fetch('https://api.github.com/repos/whennig2000/shogitool/contents/server/puzzles.json');
+          const res = await fetch(`https://api.github.com/repos/whennig2000/shogitool/contents/server/puzzles.json?t=${Date.now()}`, {
+             headers: { 'Cache-Control': 'no-cache' }
+          });
           if (res.ok) {
             const data = await res.json();
             const content = decodeURIComponent(escape(atob(data.content)));

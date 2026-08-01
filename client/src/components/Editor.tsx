@@ -43,7 +43,9 @@ export const Editor: React.FC = () => {
   useEffect(() => {
     const fetchSetups = async () => {
       try {
-        const res = await fetch('https://api.github.com/repos/whennig2000/shogitool/contents/server/setups.json');
+        const res = await fetch(`https://api.github.com/repos/whennig2000/shogitool/contents/server/setups.json?t=${Date.now()}`, {
+           headers: { 'Cache-Control': 'no-cache' }
+        });
         if (res.ok) {
           const data = await res.json();
           const content = decodeURIComponent(escape(atob(data.content)));
@@ -259,8 +261,11 @@ export const Editor: React.FC = () => {
       const filePath = isPuzzle ? 'server/puzzles.json' : 'server/setups.json';
       const apiUrl = `https://api.github.com/repos/whennig2000/shogitool/contents/${filePath}`;
       
-      const getRes = await fetch(apiUrl, {
-        headers: { 'Authorization': `token ${token}` }
+      const getRes = await fetch(`${apiUrl}?t=${Date.now()}`, {
+        headers: { 
+          'Authorization': `token ${token}`,
+          'Cache-Control': 'no-cache'
+        }
       });
       
       let existingData: any[] = [];

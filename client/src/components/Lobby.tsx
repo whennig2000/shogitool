@@ -26,7 +26,9 @@ export const Lobby = () => {
 
     const fetchSetups = async () => {
       try {
-        const res = await fetch('https://api.github.com/repos/whennig2000/shogitool/contents/server/setups.json');
+        const res = await fetch(`https://api.github.com/repos/whennig2000/shogitool/contents/server/setups.json?t=${Date.now()}`, {
+           headers: { 'Cache-Control': 'no-cache' }
+        });
         if (res.ok) {
           const data = await res.json();
           const content = decodeURIComponent(escape(atob(data.content))); // proper utf-8 decode
