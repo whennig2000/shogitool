@@ -92,7 +92,14 @@ function executeBotMove(roomId: string, difficulty: string) {
 
   if (possibleMoves.length === 0) {
     if (difficulty === 'puzzle' && room.puzzleState) {
-      io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Super! Du hast das Matt gefunden! Wähle das nächste Puzzle oder beende das Spiel.' });
+      io.to(roomId).emit('chatMessage', { 
+        role: 'bot', 
+        message: 'Super! Du hast das Matt gefunden! Wähle das nächste Puzzle oder beende das Spiel.',
+        options: [
+          { label: 'Zufällig', value: 'random' },
+          ...room.puzzleState.availablePuzzles.map((p, i) => ({ label: p.name, value: String(i) }))
+        ]
+      });
     } else {
       io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Schachmatt! Du hast gewonnen!' });
     }
@@ -100,8 +107,14 @@ function executeBotMove(roomId: string, difficulty: string) {
   }
 
   if (difficulty === 'puzzle' && room.puzzleState && room.puzzleState.movesRemaining <= 0) {
-    io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Nicht geschafft! Du hast das Matt nicht in der vorgegebenen Zügezahl gefunden. Versuch es nochmal!' });
-    setTimeout(() => loadPuzzle(roomId, true), 3000);
+    io.to(roomId).emit('chatMessage', { 
+      role: 'bot', 
+      message: 'Nicht geschafft! Du hast das Matt nicht in der vorgegebenen Zügezahl gefunden. Versuch es nochmal!',
+      options: [
+        { label: 'Zufällig', value: 'random' },
+        ...room.puzzleState.availablePuzzles.map((p, i) => ({ label: p.name, value: String(i) }))
+      ]
+    });
     return;
   }
 
@@ -133,7 +146,18 @@ function executeBotMove(roomId: string, difficulty: string) {
     newBoard[selectedMove.from.y][selectedMove.from.x] = null;
     if (selectedMove.target) {
       if (selectedMove.target.type === 'king') {
-        io.to(roomId).emit('chatMessage', { role: 'system', message: 'Der Bot hat deinen König geschlagen! Spielende.' });
+        if (difficulty === 'puzzle' && room.puzzleState) {
+          io.to(roomId).emit('chatMessage', { 
+            role: 'system', 
+            message: 'Der Bot hat deinen König geschlagen! Spielende. Versuch es nochmal!',
+            options: [
+              { label: 'Zufällig', value: 'random' },
+              ...room.puzzleState.availablePuzzles.map((p, i) => ({ label: p.name, value: String(i) }))
+            ]
+          });
+        } else {
+          io.to(roomId).emit('chatMessage', { role: 'system', message: 'Der Bot hat deinen König geschlagen! Spielende.' });
+        }
       } else {
         const demoted = getDemotedType(selectedMove.target.type);
         newCaptured[gote].push(createPiece(demoted, gote));

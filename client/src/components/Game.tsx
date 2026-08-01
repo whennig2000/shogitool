@@ -418,6 +418,7 @@ export const Game = () => {
                           const selectEl = document.getElementById(`puzzle-select-${i}`) as HTMLSelectElement;
                           if (selectEl) {
                             socket.emit('selectPuzzle', roomId, selectEl.value);
+                            setChatMessages(prev => prev.map((msg, idx) => idx === i ? { ...msg, options: undefined } : msg));
                           }
                         }}
                       >
