@@ -30,6 +30,7 @@ export const Editor: React.FC = () => {
   const [movesToMate, setMovesToMate] = useState(3);
   const [editorPhase, setEditorPhase] = useState<'setup' | 'solution'>('setup');
   const [solution, setSolution] = useState<RecordedMove[]>([]);
+  const [recordingTurn, setRecordingTurn] = useState<Player>('sente');
   
   // Board Editor Tools
   const [selectedType, setSelectedType] = useState<PieceType | 'eraser'>('king');
@@ -139,6 +140,7 @@ export const Editor: React.FC = () => {
       if (selectedPieceRef) {
          if (board[y][x]) {
             // If clicking another piece on board, select it
+            if (editorPhase === 'solution' && board[y][x]!.owner !== recordingTurn) return;
             setSelectedPieceRef({ location: 'board', x, y });
          } else {
             // Move selected piece to empty cell
@@ -167,12 +169,14 @@ export const Editor: React.FC = () => {
                      pieceType: movingPiece.type
                   };
                   setSolution(prev => [...prev, move]);
+                  setRecordingTurn(prev => prev === 'sente' ? 'gote' : 'sente');
                }
             }
             setSelectedPieceRef(null);
          }
       } else {
          if (board[y][x]) {
+            if (editorPhase === 'solution' && board[y][x]!.owner !== recordingTurn) return;
             setSelectedPieceRef({ location: 'board', x, y });
          }
       }
@@ -200,6 +204,7 @@ export const Editor: React.FC = () => {
     if (editorMode === 'board') {
       removeHandPiece(owner, index);
     } else {
+      if (editorPhase === 'solution' && owner !== recordingTurn) return;
       setSelectedPieceRef({ location: 'hand', owner, index });
     }
   };
@@ -367,7 +372,7 @@ export const Editor: React.FC = () => {
         name,
         boardId,
         botRole,
-        movesToMate: solution.length > 0 ? solution.length : movesToMate,
+        movesToMate: solution.length > 0 ? Math.ceil(solution.length / 2) : movesToMate,
         solution,
         width,
         height,
@@ -389,9 +394,16 @@ export const Editor: React.FC = () => {
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <h2 className="title" style={{ margin: 0 }}>
-          {editorMode === 'board' ? 'Board Editor' : 'Matt-Problem Creator'}
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <h2 className="title" style={{ margin: 0 }}>
+            {editorMode === 'board' ? 'Board Editor' : 'Matt-Problem Creator'}
+          </h2>
+          {editorPhase === 'solution' && (
+            <div style={{ padding: '0.25rem 0.75rem', background: 'var(--primary)', color: 'white', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+              Aufzeichnung: {recordingTurn === 'sente' ? 'Sente (Schwarz)' : 'Gote (Weiß)'} ist am Zug
+            </div>
+          )}
+        </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button 
             className={`btn ${editorMode === 'board' ? '' : 'btn-secondary'}`} 
@@ -597,7 +609,7 @@ export const Editor: React.FC = () => {
              </button>
           ) : (
              editorPhase === 'setup' ? (
-               <button className="btn" style={{ marginTop: '2rem', width: '100%', background: 'var(--theme-sente)', color: '#fff' }} onClick={() => { setEditorPhase('solution'); setSolution([]); }}>
+               <button className="btn" style={{ marginTop: '2rem', width: '100%', background: 'var(--theme-sente)', color: '#fff' }} onClick={() => { setEditorPhase('solution'); setSolution([]); setRecordingTurn(botRole === 'gote' ? 'sente' : 'gote'); }}>
                  🔴 Lösung aufzeichnen
                </button>
              ) : (
@@ -606,7 +618,7 @@ export const Editor: React.FC = () => {
                    ⏹️ Abbrechen
                  </button>
                  <button className="btn" style={{ flex: 2 }} onClick={saveSetup} disabled={isSaving || solution.length === 0}>
-                   {isSaving ? '⏳ Speichere...' : `💾 Speichern (${solution.length} Züge)`}
+                   {isSaving ? '⏳ Speichere...' : `💾 Speichern (${Math.ceil(solution.length / 2)} Züge bis Matt)`}
                  </button>
                </div>
              )
