@@ -43,13 +43,10 @@ export const Editor: React.FC = () => {
   useEffect(() => {
     const fetchSetups = async () => {
       try {
-        const res = await fetch(`https://api.github.com/repos/whennig2000/shogitool/contents/server/setups.json?t=${Date.now()}`, {
-           headers: { 'Cache-Control': 'no-cache' }
-        });
+        const res = await fetch(`https://raw.githubusercontent.com/whennig2000/shogitool/main/server/setups.json?t=${Date.now()}`);
         if (res.ok) {
           const data = await res.json();
-          const content = decodeURIComponent(escape(atob(data.content)));
-          setCustomSetups(JSON.parse(content));
+          setCustomSetups(data);
         }
       } catch (e) {
         console.error('Failed to load setups', e);

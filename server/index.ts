@@ -362,13 +362,9 @@ io.on('connection', (socket: Socket) => {
       
       if (difficulty === 'puzzle') {
         try {
-          const res = await fetch(`https://api.github.com/repos/whennig2000/shogitool/contents/server/puzzles.json?t=${Date.now()}`, {
-             headers: { 'Cache-Control': 'no-cache' }
-          });
+          const res = await fetch(`https://raw.githubusercontent.com/whennig2000/shogitool/main/server/puzzles.json?t=${Date.now()}`);
           if (res.ok) {
-            const data = await res.json();
-            const content = decodeURIComponent(escape(atob(data.content)));
-            const allPuzzles: PuzzleSetup[] = JSON.parse(content);
+            const allPuzzles: PuzzleSetup[] = await res.json();
             const availablePuzzles = allPuzzles.filter(p => p.boardId === room.boardId);
             
             if (availablePuzzles.length === 0) {
