@@ -76,5 +76,279 @@
       ]
     },
     "promotionZoneSize": 2
+  },
+  {
+    "id": "puzzle_1785586048131_1",
+    "name": "Kopf-Gold (Atama-kin)",
+    "boardId": "standard",
+    "botRole": "gote",
+    "movesToMate": 1,
+    "width": 9,
+    "height": 9,
+    "board": [
+      [
+        null,
+        null,
+        null,
+        null,
+        {
+          "id": "p1_k",
+          "type": "king",
+          "owner": "gote"
+        },
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        {
+          "id": "p1_p1",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        null,
+        {
+          "id": "p1_p2",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        {
+          "id": "p1_p3",
+          "type": "pawn",
+          "owner": "sente"
+        },
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "hands": {
+      "sente": [
+        {
+          "id": "p1_hg",
+          "type": "gold",
+          "owner": "sente"
+        }
+      ],
+      "gote": []
+    },
+    "promotionZoneSize": 3
+  },
+  {
+    "id": "puzzle_1785586048131_2",
+    "name": "Ersticktes Matt (Springer)",
+    "boardId": "standard",
+    "botRole": "gote",
+    "movesToMate": 1,
+    "width": 9,
+    "height": 9,
+    "board": [
+      [
+        {
+          "id": "p2_k",
+          "type": "king",
+          "owner": "gote"
+        },
+        {
+          "id": "p2_l",
+          "type": "lance",
+          "owner": "gote"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        {
+          "id": "p2_n1",
+          "type": "knight",
+          "owner": "gote"
+        },
+        {
+          "id": "p2_s",
+          "type": "silver",
+          "owner": "gote"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "hands": {
+      "sente": [
+        {
+          "id": "p2_hn",
+          "type": "knight",
+          "owner": "sente"
+        }
+      ],
+      "gote": []
+    },
+    "promotionZoneSize": 3
   }
 ]
