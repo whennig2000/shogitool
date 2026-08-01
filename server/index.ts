@@ -35,6 +35,7 @@ interface Room {
     availablePuzzles: PuzzleSetup[];
     currentPuzzleIndex: number;
     movesRemaining: number;
+    currentMoveIndex?: number;
   };
   timerInterval?: NodeJS.Timeout;
   lastTick?: number;
@@ -121,7 +122,26 @@ function executeBotMove(roomId: string, difficulty: string) {
   // Select move
   let selectedMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
 
-  if (difficulty === 'greedy') {
+  if (difficulty === 'puzzle' && room.puzzleState) {
+    const puzzle = room.puzzleState.availablePuzzles[room.puzzleState.currentPuzzleIndex];
+    if (puzzle.solution && puzzle.solution.length > (room.puzzleState.currentMoveIndex || 0)) {
+       const expectedMove = puzzle.solution[room.puzzleState.currentMoveIndex!];
+       const matchingMove = possibleMoves.find(m => {
+          if (m.type !== expectedMove.type) return false;
+          if (m.to.x !== expectedMove.to.x || m.to.y !== expectedMove.to.y) return false;
+          if (m.type === 'move') {
+             if (m.from.x !== expectedMove.from!.x || m.from.y !== expectedMove.from!.y) return false;
+          } else {
+             if (m.piece.type !== expectedMove.pieceType) return false;
+          }
+          return true;
+       });
+       if (matchingMove) {
+          selectedMove = { ...matchingMove, promote: expectedMove.promote };
+          room.puzzleState.currentMoveIndex!++;
+       }
+    }
+  } else if (difficulty === 'greedy') {
     const captures = possibleMoves.filter(m => m.type === 'move' && m.target !== null);
     if (captures.length > 0) {
       selectedMove = captures[Math.floor(Math.random() * captures.length)];
@@ -165,7 +185,11 @@ function executeBotMove(roomId: string, difficulty: string) {
     }
     
     let finalPiece = selectedMove.piece;
-    if (getPromotedType(finalPiece.type)) {
+    if (selectedMove.promote !== undefined) {
+      if (selectedMove.promote && getPromotedType(finalPiece.type)) {
+         finalPiece = { ...finalPiece, type: getPromotedType(finalPiece.type)! };
+      }
+    } else if (getPromotedType(finalPiece.type)) {
       // Auto promote for bot if possible
       const zone = state.promotionZoneSize || (board.length >= 9 ? 3 : 1);
       if (canPromote(board, zone, selectedMove.from.y, gote) || canPromote(board, zone, selectedMove.to.y, gote)) {
@@ -217,6 +241,7 @@ function loadPuzzle(roomId: string, puzzleIndex: number, retry = false) {
   }));
   
   room.puzzleState.movesRemaining = puzzle.movesToMate;
+  room.puzzleState.currentMoveIndex = 0;
   
   // Set the turn based on the botRole
   // If botRole is 'gote', bot plays as gote, meaning sente (player) goes first
@@ -314,6 +339,54 @@ io.on('connection', (socket: Socket) => {
         newState.timerEnabled = true;
         newState.timeLeft = room.gameState.timeLeft;
       }
+      // Puzzle Solution Validation
+      if (room.isBotMatch && room.botDifficulty === 'puzzle' && room.puzzleState) {
+         const puzzle = room.puzzleState.availablePuzzles[room.puzzleState.currentPuzzleIndex];
+         if (puzzle.solution && puzzle.solution.length > (room.puzzleState.currentMoveIndex || 0)) {
+            const currentMoveIndex = room.puzzleState.currentMoveIndex || 0;
+            const expectedMove = puzzle.solution[currentMoveIndex];
+            const actualMove = newState.lastMove;
+            
+            if (actualMove) {
+               let isCorrect = true;
+               if (expectedMove.from) {
+                  if (!actualMove.from || actualMove.from.x !== expectedMove.from.x || actualMove.from.y !== expectedMove.from.y) isCorrect = false;
+               } else {
+                  if (actualMove.from) isCorrect = false;
+               }
+               if (actualMove.to.x !== expectedMove.to.x || actualMove.to.y !== expectedMove.to.y) isCorrect = false;
+
+               if (!isCorrect) {
+                  io.to(roomId).emit('chatMessage', { 
+                    role: 'bot', 
+                    message: 'Nicht geschafft! Falscher Zug. Versuch es nochmal!',
+                    options: [
+                      { label: 'Zufällig', value: 'random' },
+                      ...room.puzzleState.availablePuzzles.map((p, i) => ({ label: p.name, value: String(i) }))
+                    ]
+                  });
+                  socket.emit('stateUpdated', room.gameState); // Revert client
+                  return;
+               }
+               
+               room.puzzleState.currentMoveIndex = currentMoveIndex + 1;
+               
+               // If player just finished the puzzle
+               if (room.puzzleState.currentMoveIndex >= puzzle.solution.length) {
+                  io.to(roomId).emit('chatMessage', { 
+                    role: 'bot', 
+                    message: 'Super! Du hast das Matt gefunden! Wähle das nächste Puzzle oder beende das Spiel.',
+                    options: [
+                      { label: 'Zufällig', value: 'random' },
+                      ...room.puzzleState.availablePuzzles.map((p, i) => ({ label: p.name, value: String(i) }))
+                    ]
+                  });
+                  // Allow the state update to go through so they see the final move
+               }
+            }
+         }
+      }
+
       room.gameState = newState;
       socket.to(roomId).emit('stateUpdated', newState);
 

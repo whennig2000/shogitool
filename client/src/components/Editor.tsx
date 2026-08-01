@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { BoardState, Piece, PieceType, Player, CustomSetup, PuzzleSetup } from '../../../shared/types';
+import type { BoardState, Piece, PieceType, Player, CustomSetup, PuzzleSetup, RecordedMove } from '../../../shared/types';
 import { createPiece, getInitialBoard } from '../../../shared/constants';
 import { getPromotedType, getDemotedType } from '../../../shared/movement';
 import { PieceIcon } from './PieceIcon';
@@ -28,6 +28,8 @@ export const Editor: React.FC = () => {
   const [boardId, setBoardId] = useState('standard');
   const [botRole, setBotRole] = useState<Player>('gote');
   const [movesToMate, setMovesToMate] = useState(3);
+  const [editorPhase, setEditorPhase] = useState<'setup' | 'solution'>('setup');
+  const [solution, setSolution] = useState<RecordedMove[]>([]);
   
   // Board Editor Tools
   const [selectedType, setSelectedType] = useState<PieceType | 'eraser'>('king');
@@ -156,6 +158,16 @@ export const Editor: React.FC = () => {
                newBoard[y][x] = movingPiece;
                setBoard(newBoard);
                setHands(newHands);
+               
+               if (editorPhase === 'solution') {
+                  const move: RecordedMove = {
+                     type: selectedPieceRef.location === 'board' ? 'move' : 'drop',
+                     from: selectedPieceRef.location === 'board' ? { x: selectedPieceRef.x, y: selectedPieceRef.y } : undefined,
+                     to: { x, y },
+                     pieceType: movingPiece.type
+                  };
+                  setSolution(prev => [...prev, move]);
+               }
             }
             setSelectedPieceRef(null);
          }
@@ -229,8 +241,22 @@ export const Editor: React.FC = () => {
      if (piece) {
         if (getPromotedType(piece.type)) {
            piece.type = getPromotedType(piece.type)!;
+           if (editorPhase === 'solution' && solution.length > 0) {
+               setSolution(prev => {
+                   const newSol = [...prev];
+                   newSol[newSol.length - 1].promote = true;
+                   return newSol;
+               });
+           }
         } else if (getDemotedType(piece.type)) {
            piece.type = getDemotedType(piece.type);
+           if (editorPhase === 'solution' && solution.length > 0) {
+               setSolution(prev => {
+                   const newSol = [...prev];
+                   newSol[newSol.length - 1].promote = false;
+                   return newSol;
+               });
+           }
         }
      }
 
@@ -341,7 +367,8 @@ export const Editor: React.FC = () => {
         name,
         boardId,
         botRole,
-        movesToMate,
+        movesToMate: solution.length > 0 ? solution.length : movesToMate,
+        solution,
         width,
         height,
         board,
@@ -564,9 +591,26 @@ export const Editor: React.FC = () => {
             </div>
           </div>
           
-          <button className="btn" style={{ marginTop: '2rem', width: '100%' }} onClick={saveSetup} disabled={isSaving}>
-            {isSaving ? '⏳ Speichere auf GitHub...' : (editorMode === 'board' ? '💾 Setup auf GitHub Speichern' : '💾 Puzzle auf GitHub Speichern')}
-          </button>
+          {editorMode === 'board' ? (
+             <button className="btn" style={{ marginTop: '2rem', width: '100%' }} onClick={saveSetup} disabled={isSaving}>
+               {isSaving ? '⏳ Speichere auf GitHub...' : '💾 Setup auf GitHub Speichern'}
+             </button>
+          ) : (
+             editorPhase === 'setup' ? (
+               <button className="btn" style={{ marginTop: '2rem', width: '100%', background: 'var(--theme-sente)', color: '#fff' }} onClick={() => { setEditorPhase('solution'); setSolution([]); }}>
+                 🔴 Lösung aufzeichnen
+               </button>
+             ) : (
+               <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                 <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => { setEditorPhase('setup'); setSolution([]); }}>
+                   ⏹️ Abbrechen
+                 </button>
+                 <button className="btn" style={{ flex: 2 }} onClick={saveSetup} disabled={isSaving || solution.length === 0}>
+                   {isSaving ? '⏳ Speichere...' : `💾 Speichern (${solution.length} Züge)`}
+                 </button>
+               </div>
+             )
+          )}
         </div>
       </div>
 

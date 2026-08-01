@@ -65,10 +65,19 @@ export interface CustomSetup {
   promotionZoneSize?: number;
 }
 
+export interface RecordedMove {
+  type: 'move' | 'drop';
+  from?: Position;
+  to: Position;
+  pieceType: PieceType;
+  promote?: boolean;
+}
+
 export interface PuzzleSetup extends CustomSetup {
   boardId: string;
   botRole: Player;
   movesToMate: number;
+  solution?: RecordedMove[];
 }
 
 export interface ThemeConfig {
