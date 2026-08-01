@@ -91,7 +91,53 @@ function executeBotMove(roomId: string, difficulty: string) {
     }
   }
 
-  if (possibleMoves.length === 0) {
+  // Filter out moves that leave the Bot's king in check
+  const legalMoves = possibleMoves.filter(move => {
+    // Simulate move
+    const newBoard = board.map(r => [...r]);
+    if (move.type === 'drop') {
+      newBoard[move.to.y][move.to.x] = { ...move.piece, owner: gote };
+    } else {
+      newBoard[move.from.y][move.from.x] = null;
+      let finalPiece = move.piece;
+      if (move.promote !== undefined) {
+        if (move.promote && getPromotedType(finalPiece.type)) {
+           finalPiece = { ...finalPiece, type: getPromotedType(finalPiece.type)! };
+        }
+      }
+      newBoard[move.to.y][move.to.x] = finalPiece;
+    }
+
+    // Find Bot's king
+    let kingPos: Position | null = null;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const p = newBoard[y][x];
+        if (p && p.type === 'king' && p.owner === gote) {
+          kingPos = { x, y };
+        }
+      }
+    }
+    
+    // If no king (e.g. invalid board), assume move is ok
+    if (!kingPos) return true;
+
+    // Check if any enemy piece can capture the king
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const p = newBoard[y][x];
+        if (p && p.owner === 'sente') {
+          const enemyMoves = getValidMoves(newBoard, { x, y });
+          if (enemyMoves.some(m => m.x === kingPos!.x && m.y === kingPos!.y)) {
+            return false; // King is in check, move is illegal
+          }
+        }
+      }
+    }
+    return true; // King is safe
+  });
+
+  if (legalMoves.length === 0) {
     if (difficulty === 'puzzle' && room.puzzleState) {
       io.to(roomId).emit('chatMessage', { 
         role: 'bot', 
@@ -120,13 +166,13 @@ function executeBotMove(roomId: string, difficulty: string) {
   }
 
   // Select move
-  let selectedMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+  let selectedMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
 
   if (difficulty === 'puzzle' && room.puzzleState) {
     const puzzle = room.puzzleState.availablePuzzles[room.puzzleState.currentPuzzleIndex];
     if (puzzle.solution && puzzle.solution.length > (room.puzzleState.currentMoveIndex || 0)) {
        const expectedMove = puzzle.solution[room.puzzleState.currentMoveIndex!];
-       const matchingMove = possibleMoves.find(m => {
+       const matchingMove = legalMoves.find(m => {
           if (m.type !== expectedMove.type) return false;
           if (m.to.x !== expectedMove.to.x || m.to.y !== expectedMove.to.y) return false;
           if (m.type === 'move') {
@@ -142,7 +188,7 @@ function executeBotMove(roomId: string, difficulty: string) {
        }
     }
   } else if (difficulty === 'greedy') {
-    const captures = possibleMoves.filter(m => m.type === 'move' && m.target !== null);
+    const captures = legalMoves.filter(m => m.type === 'move' && m.target !== null);
     if (captures.length > 0) {
       selectedMove = captures[Math.floor(Math.random() * captures.length)];
       io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Lecker, eine Figur geschnappt!' });
