@@ -1,0 +1,469 @@
+[
+  {
+    "id": "puzzle_1785582185571",
+    "name": "test",
+    "boardId": "setup_1785419143975",
+    "botRole": "gote",
+    "movesToMate": 1,
+    "width": 3,
+    "height": 5,
+    "board": [
+      [
+        {
+          "id": "piece_7",
+          "type": "king",
+          "owner": "gote"
+        },
+        null,
+        {
+          "id": "piece_2",
+          "type": "promoted_pawn",
+          "owner": "sente"
+        }
+      ],
+      [
+        {
+          "id": "piece_5",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_1",
+          "type": "lance",
+          "owner": "sente"
+        },
+        null
+      ],
+      [
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        {
+          "id": "piece_0",
+          "type": "king",
+          "owner": "sente"
+        }
+      ]
+    ],
+    "hands": {
+      "sente": [
+        {
+          "id": "piece_3",
+          "type": "gold",
+          "owner": "sente"
+        }
+      ],
+      "gote": [
+        {
+          "id": "piece_6",
+          "type": "lance",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_4",
+          "type": "gold",
+          "owner": "gote"
+        }
+      ]
+    },
+    "promotionZoneSize": 2
+  },
+  {
+    "id": "puzzle_1785586048131_1",
+    "name": "Kopf-Gold (Atama-kin)",
+    "boardId": "standard",
+    "botRole": "gote",
+    "movesToMate": 1,
+    "width": 9,
+    "height": 9,
+    "board": [
+      [
+        null,
+        null,
+        null,
+        null,
+        {
+          "id": "p1_k",
+          "type": "king",
+          "owner": "gote"
+        },
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        {
+          "id": "p1_p1",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        null,
+        {
+          "id": "p1_p2",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        {
+          "id": "p1_p3",
+          "type": "pawn",
+          "owner": "sente"
+        },
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "hands": {
+      "sente": [
+        {
+          "id": "p1_hg",
+          "type": "gold",
+          "owner": "sente"
+        }
+      ],
+      "gote": []
+    },
+    "promotionZoneSize": 3
+  },
+  {
+    "id": "puzzle_1785586048131_2",
+    "name": "Ersticktes Matt (Springer)",
+    "boardId": "standard",
+    "botRole": "gote",
+    "movesToMate": 1,
+    "width": 9,
+    "height": 9,
+    "board": [
+      [
+        {
+          "id": "p2_k",
+          "type": "king",
+          "owner": "gote"
+        },
+        {
+          "id": "p2_l",
+          "type": "lance",
+          "owner": "gote"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        {
+          "id": "p2_n1",
+          "type": "knight",
+          "owner": "gote"
+        },
+        {
+          "id": "p2_s",
+          "type": "silver",
+          "owner": "gote"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "hands": {
+      "sente": [
+        {
+          "id": "p2_hn",
+          "type": "knight",
+          "owner": "sente"
+        }
+      ],
+      "gote": []
+    },
+    "promotionZoneSize": 3
+  },
+  {
+    "id": "puzzle_1785603212185",
+    "name": "sp2",
+    "boardId": "setup_1785419143975",
+    "botRole": "gote",
+    "movesToMate": 2,
+    "solution": [
+      {
+        "type": "move",
+        "from": {
+          "x": 2,
+          "y": 1
+        },
+        "to": {
+          "x": 2,
+          "y": 0
+        },
+        "pieceType": "promoted_pawn"
+      },
+      {
+        "type": "move",
+        "from": {
+          "x": 0,
+          "y": 3
+        },
+        "to": {
+          "x": 0,
+          "y": 4
+        },
+        "pieceType": "gold"
+      },
+      {
+        "type": "move",
+        "from": {
+          "x": 2,
+          "y": 0
+        },
+        "to": {
+          "x": 1,
+          "y": 0
+        },
+        "pieceType": "promoted_pawn"
+      }
+    ],
+    "width": 3,
+    "height": 5,
+    "board": [
+      [
+        {
+          "id": "piece_7",
+          "type": "king",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_2",
+          "type": "promoted_pawn",
+          "owner": "sente"
+        },
+        null
+      ],
+      [
+        {
+          "id": "piece_5",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_1",
+          "type": "lance",
+          "owner": "sente"
+        },
+        null
+      ],
+      [
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null
+      ],
+      [
+        {
+          "id": "piece_4",
+          "type": "gold",
+          "owner": "gote"
+        },
+        null,
+        {
+          "id": "piece_0",
+          "type": "king",
+          "owner": "sente"
+        }
+      ]
+    ],
+    "hands": {
+      "sente": [
+        {
+          "id": "piece_80",
+          "type": "lance",
+          "owner": "sente"
+        }
+      ],
+      "gote": [
+        {
+          "id": "piece_81",
+          "type": "gold",
+          "owner": "gote"
+        }
+      ]
+    },
+    "promotionZoneSize": 2
+  }
+]
