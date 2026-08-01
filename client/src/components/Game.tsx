@@ -430,10 +430,23 @@ export const Game = () => {
               ))}
               <div ref={chatEndRef} />
             </div>
-            <form className="chat-input" onSubmit={sendChat}>
-              <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Nachricht..." />
-              <button type="submit">Senden</button>
-            </form>
+            <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--border)' }}>
+              {gameState.playerNames.gote === 'Bot (Gote)' && !isGameOver && (
+                <div style={{ padding: '0.5rem', display: 'flex', justifyContent: 'center' }}>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => socket.emit('requestHint', roomId)}
+                    style={{ width: '100%', fontSize: '0.9rem' }}
+                  >
+                    💡 Tipp anzeigen
+                  </button>
+                </div>
+              )}
+              <form className="chat-input" onSubmit={sendChat}>
+                <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Nachricht..." />
+                <button type="submit">Senden</button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
