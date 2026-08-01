@@ -302,9 +302,9 @@ export const Editor: React.FC = () => {
       const apiUrl = `https://api.github.com/repos/whennig2000/shogitool/contents/${filePath}`;
       
       const getRes = await fetch(`${apiUrl}?t=${Date.now()}`, {
+        cache: 'no-store',
         headers: { 
-          'Authorization': `Bearer ${cleanToken}`,
-          'Cache-Control': 'no-cache'
+          'Authorization': `Bearer ${cleanToken}`
         }
       });
       
