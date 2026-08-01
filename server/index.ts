@@ -349,6 +349,13 @@ io.on('connection', (socket: Socket) => {
       room.isBotMatch = true;
       room.botDifficulty = difficulty;
       room.gameState.playerNames.gote = 'Bot (Gote)';
+      
+      if (difficulty === 'puzzle') {
+        room.gameState.timerConfigured = true;
+        room.gameState.timerEnabled = false;
+        delete room.gameState.timeLeft;
+      }
+      
       io.to(roomId).emit('stateUpdated', room.gameState);
       io.to(roomId).emit('playerJoined', { role: 'gote' });
       io.to(roomId).emit('chatMessage', { role: 'system', message: 'Ein Bot ist dem Spiel beigetreten!' });
@@ -363,7 +370,13 @@ io.on('connection', (socket: Socket) => {
             const availablePuzzles = allPuzzles.filter(p => p.boardId === room.boardId);
             
             if (availablePuzzles.length === 0) {
-               io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Ich habe leider keine Matt-Probleme für dieses Board gefunden.' });
+               io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Ich habe leider keine Matt-Probleme für dieses Board gefunden. Ich verlasse den Raum, damit du jemand anderen einladen kannst.' });
+               room.gotePlayer = null;
+               room.isBotMatch = false;
+               room.botDifficulty = undefined;
+               room.gameState.playerNames.gote = 'Player 2';
+               io.to(roomId).emit('playerDisconnected', { role: 'gote' });
+               io.to(roomId).emit('stateUpdated', room.gameState);
                return cb({ success: true });
             }
 

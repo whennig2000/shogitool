@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { BoardState, Piece, PieceType, Player, CustomSetup, PuzzleSetup } from '../../../shared/types';
-import { createPiece } from '../../../shared/constants';
+import { createPiece, getInitialBoard } from '../../../shared/constants';
+import { getPromotedType, getDemotedType } from '../../../shared/movement';
 import { PieceIcon } from './PieceIcon';
 import { getDisplayMode } from './Settings';
 
 const PIECE_TYPES: PieceType[] = ['pawn', 'lance', 'knight', 'silver', 'gold', 'bishop', 'rook', 'king'];
+
+type SelectedPieceRef = { location: 'board', x: number, y: number } | { location: 'hand', owner: Player, index: number } | null;
 
 export const Editor: React.FC = () => {
   const navigate = useNavigate();
@@ -26,15 +29,18 @@ export const Editor: React.FC = () => {
   const [botRole, setBotRole] = useState<Player>('gote');
   const [movesToMate, setMovesToMate] = useState(3);
   
+  // Board Editor Tools
   const [selectedType, setSelectedType] = useState<PieceType | 'eraser'>('king');
   const [selectedOwner, setSelectedOwner] = useState<Player>('sente');
+
+  // Puzzle Editor Selection
+  const [selectedPieceRef, setSelectedPieceRef] = useState<SelectedPieceRef>(null);
 
   const [showTokenPrompt, setShowTokenPrompt] = useState(false);
   const [githubToken, setGithubToken] = useState(localStorage.getItem('github_token') || '');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    // Fetch custom setups for puzzle base board selection
     const fetchSetups = async () => {
       try {
         const res = await fetch('https://api.github.com/repos/whennig2000/shogitool/contents/server/setups.json');
@@ -50,24 +56,58 @@ export const Editor: React.FC = () => {
     fetchSetups();
   }, []);
 
+  // Initialize Puzzle Mode Piece Pool
+  useEffect(() => {
+    if (editorMode === 'puzzle') {
+      handleBaseBoardChange(boardId);
+    } else {
+       setSelectedPieceRef(null);
+    }
+  }, [editorMode]);
+
   const handleBaseBoardChange = (newBoardId: string) => {
     setBoardId(newBoardId);
     let newWidth = 9;
     let newHeight = 9;
     let newZone = 3;
+    let baseBoard = getInitialBoard();
+    let baseHands = { sente: [], gote: [] } as { sente: Piece[], gote: Piece[] };
+
     if (newBoardId !== 'standard') {
       const setup = customSetups.find(s => s.id === newBoardId);
       if (setup) {
         newWidth = setup.width;
         newHeight = setup.height;
         newZone = setup.promotionZoneSize || 0;
+        baseBoard = setup.board;
+        baseHands = setup.hands || baseHands;
       }
     }
-    updateSize(newWidth, newHeight);
+
+    if (editorMode === 'puzzle') {
+      const newSenteHand: Piece[] = [...baseHands.sente];
+      const newGoteHand: Piece[] = [...baseHands.gote];
+
+      baseBoard.forEach((row) => {
+        row.forEach((cell) => {
+          if (cell) {
+             if (cell.owner === 'sente') newSenteHand.push(cell);
+             else newGoteHand.push(cell);
+          }
+        });
+      });
+
+      setHands({ sente: newSenteHand, gote: newGoteHand });
+      setBoard(Array(newHeight).fill(null).map(() => Array(newWidth).fill(null)));
+    } else {
+      setHands({ sente: [], gote: [] });
+      setBoard(Array(newHeight).fill(null).map(() => Array(newWidth).fill(null)));
+    }
+    
+    setWidth(newWidth);
+    setHeight(newHeight);
     setPromotionZoneSize(newZone);
-    // Reset board content
-    setBoard(Array(newHeight).fill(null).map(() => Array(newWidth).fill(null)));
-    setHands({ sente: [], gote: [] });
+    setSelectedPieceRef(null);
   };
 
   const updateSize = (newWidth: number, newHeight: number) => {
@@ -85,16 +125,51 @@ export const Editor: React.FC = () => {
   };
 
   const handleCellClick = (x: number, y: number) => {
-    const newBoard = board.map(row => [...row]);
-    if (selectedType === 'eraser') {
-      newBoard[y][x] = null;
+    if (editorMode === 'board') {
+      const newBoard = board.map(row => [...row]);
+      if (selectedType === 'eraser') {
+        newBoard[y][x] = null;
+      } else {
+        newBoard[y][x] = createPiece(selectedType, selectedOwner);
+      }
+      setBoard(newBoard);
     } else {
-      newBoard[y][x] = createPiece(selectedType, selectedOwner);
+      // Puzzle Mode logic
+      if (selectedPieceRef) {
+         if (board[y][x]) {
+            // If clicking another piece on board, select it
+            setSelectedPieceRef({ location: 'board', x, y });
+         } else {
+            // Move selected piece to empty cell
+            const newBoard = board.map(row => [...row]);
+            const newHands = { sente: [...hands.sente], gote: [...hands.gote] };
+            let movingPiece: Piece | null = null;
+
+            if (selectedPieceRef.location === 'board') {
+               movingPiece = newBoard[selectedPieceRef.y][selectedPieceRef.x];
+               newBoard[selectedPieceRef.y][selectedPieceRef.x] = null;
+            } else {
+               movingPiece = newHands[selectedPieceRef.owner][selectedPieceRef.index];
+               newHands[selectedPieceRef.owner].splice(selectedPieceRef.index, 1);
+            }
+
+            if (movingPiece) {
+               newBoard[y][x] = movingPiece;
+               setBoard(newBoard);
+               setHands(newHands);
+            }
+            setSelectedPieceRef(null);
+         }
+      } else {
+         if (board[y][x]) {
+            setSelectedPieceRef({ location: 'board', x, y });
+         }
+      }
     }
-    setBoard(newBoard);
   };
 
   const addHandPiece = (owner: Player, type: PieceType) => {
+    if (editorMode === 'puzzle') return;
     setHands(prev => ({
       ...prev,
       [owner]: [...prev[owner], createPiece(type, owner)]
@@ -102,11 +177,80 @@ export const Editor: React.FC = () => {
   };
 
   const removeHandPiece = (owner: Player, index: number) => {
+    if (editorMode === 'puzzle') return;
     setHands(prev => {
       const newHand = [...prev[owner]];
       newHand.splice(index, 1);
       return { ...prev, [owner]: newHand };
     });
+  };
+
+  const handleHandClick = (owner: Player, index: number) => {
+    if (editorMode === 'board') {
+      removeHandPiece(owner, index);
+    } else {
+      setSelectedPieceRef({ location: 'hand', owner, index });
+    }
+  };
+
+  // Puzzle Mode Actions
+  const flipOwner = () => {
+     if (!selectedPieceRef) return;
+     const newBoard = board.map(row => [...row]);
+     const newHands = { sente: [...hands.sente], gote: [...hands.gote] };
+     
+     if (selectedPieceRef.location === 'board') {
+        const piece = newBoard[selectedPieceRef.y][selectedPieceRef.x];
+        if (piece) piece.owner = piece.owner === 'sente' ? 'gote' : 'sente';
+        setBoard(newBoard);
+     } else {
+        const piece = newHands[selectedPieceRef.owner][selectedPieceRef.index];
+        if (piece) {
+           newHands[selectedPieceRef.owner].splice(selectedPieceRef.index, 1);
+           piece.owner = piece.owner === 'sente' ? 'gote' : 'sente';
+           newHands[piece.owner].push(piece);
+           setSelectedPieceRef({ location: 'hand', owner: piece.owner, index: newHands[piece.owner].length - 1 });
+        }
+        setHands(newHands);
+     }
+  };
+
+  const togglePromote = () => {
+     if (!selectedPieceRef) return;
+     const newBoard = board.map(row => [...row]);
+     const newHands = { sente: [...hands.sente], gote: [...hands.gote] };
+     
+     let piece: Piece | null = null;
+     if (selectedPieceRef.location === 'board') {
+        piece = newBoard[selectedPieceRef.y][selectedPieceRef.x];
+     } else {
+        piece = newHands[selectedPieceRef.owner][selectedPieceRef.index];
+     }
+
+     if (piece) {
+        if (getPromotedType(piece.type)) {
+           piece.type = getPromotedType(piece.type)!;
+        } else if (getDemotedType(piece.type)) {
+           piece.type = getDemotedType(piece.type);
+        }
+     }
+
+     if (selectedPieceRef.location === 'board') setBoard(newBoard);
+     else setHands(newHands);
+  };
+
+  const moveToHand = () => {
+     if (!selectedPieceRef || selectedPieceRef.location !== 'board') return;
+     const newBoard = board.map(row => [...row]);
+     const newHands = { sente: [...hands.sente], gote: [...hands.gote] };
+     const piece = newBoard[selectedPieceRef.y][selectedPieceRef.x];
+     if (piece) {
+        newBoard[selectedPieceRef.y][selectedPieceRef.x] = null;
+        newHands[piece.owner].push(piece);
+        setBoard(newBoard);
+        setHands(newHands);
+        setSelectedPieceRef(null);
+     }
   };
 
   const pushToGithub = async (fileData: any, token: string, isPuzzle: boolean) => {
@@ -202,6 +346,13 @@ export const Editor: React.FC = () => {
     }
   };
 
+  const isSelected = (loc: SelectedPieceRef) => {
+     if (!selectedPieceRef || !loc) return false;
+     if (loc.location === 'board' && selectedPieceRef.location === 'board') return loc.x === selectedPieceRef.x && loc.y === selectedPieceRef.y;
+     if (loc.location === 'hand' && selectedPieceRef.location === 'hand') return loc.owner === selectedPieceRef.owner && loc.index === selectedPieceRef.index;
+     return false;
+  };
+
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
@@ -273,46 +424,65 @@ export const Editor: React.FC = () => {
       <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
         {/* Sidebar */}
         <div className="lobby-card" style={{ flex: '1 1 200px' }}>
-          <h3>Werkzeuge</h3>
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-              <label>
-                <input type="radio" checked={selectedOwner === 'sente'} onChange={() => setSelectedOwner('sente')} />
-                Sente (Schwarz)
-              </label>
-              <label>
-                <input type="radio" checked={selectedOwner === 'gote'} onChange={() => setSelectedOwner('gote')} />
-                Gote (Weiß)
-              </label>
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              <button 
-                className="btn"
-                style={{ 
-                  background: selectedType === 'eraser' ? 'rgba(234, 179, 8, 0.3)' : 'var(--surface)', 
-                  color: 'var(--text)',
-                  border: selectedType === 'eraser' ? '1px solid #eab308' : '1px solid transparent'
-                }} 
-                onClick={() => setSelectedType('eraser')}
-              >
-              🧹 Eraser
-            </button>
-            {PIECE_TYPES.map(pt => (
-              <button 
-                key={pt} 
-                className="btn"
-                style={{ 
-                  background: selectedType === pt ? 'rgba(234, 179, 8, 0.3)' : 'var(--surface)',
-                  color: 'var(--text)',
-                  border: selectedType === pt ? '1px solid #eab308' : '1px solid transparent',
-                  display: 'flex', justifyContent: 'center'
-                }}
-                onClick={() => setSelectedType(pt)}
-              >
-                <PieceIcon type={pt} color={selectedOwner === 'sente' ? 'var(--theme-sente)' : 'var(--theme-gote)'} size={24} displayMode={displayMode} />
-              </button>
-            ))}
-          </div>
+          {editorMode === 'board' ? (
+             <>
+                <h3>Werkzeuge</h3>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                   <label>
+                      <input type="radio" checked={selectedOwner === 'sente'} onChange={() => setSelectedOwner('sente')} />
+                      Sente (Schwarz)
+                   </label>
+                   <label>
+                      <input type="radio" checked={selectedOwner === 'gote'} onChange={() => setSelectedOwner('gote')} />
+                      Gote (Weiß)
+                   </label>
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                   <button 
+                      className="btn"
+                      style={{ 
+                        background: selectedType === 'eraser' ? 'rgba(234, 179, 8, 0.3)' : 'var(--surface)', 
+                        color: 'var(--text)',
+                        border: selectedType === 'eraser' ? '1px solid #eab308' : '1px solid transparent'
+                      }} 
+                      onClick={() => setSelectedType('eraser')}
+                   >
+                    🧹 Eraser
+                  </button>
+                  {PIECE_TYPES.map(pt => (
+                    <button 
+                      key={pt} 
+                      className="btn"
+                      style={{ 
+                        background: selectedType === pt ? 'rgba(234, 179, 8, 0.3)' : 'var(--surface)',
+                        color: 'var(--text)',
+                        border: selectedType === pt ? '1px solid #eab308' : '1px solid transparent',
+                        display: 'flex', justifyContent: 'center'
+                      }}
+                      onClick={() => setSelectedType(pt)}
+                    >
+                      <PieceIcon type={pt} color={selectedOwner === 'sente' ? 'var(--theme-sente)' : 'var(--theme-gote)'} size={24} displayMode={displayMode} />
+                    </button>
+                  ))}
+                </div>
+             </>
+          ) : (
+             <>
+                <h3>Aktionen</h3>
+                {selectedPieceRef ? (
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+                      <button className="btn btn-secondary" onClick={flipOwner}>Seite wechseln</button>
+                      <button className="btn btn-secondary" onClick={togglePromote}>Befördern / Degradieren</button>
+                      {selectedPieceRef.location === 'board' && (
+                         <button className="btn btn-secondary" onClick={moveToHand}>In die Hand</button>
+                      )}
+                   </div>
+                ) : (
+                   <p style={{ opacity: 0.7 }}>Wähle eine Figur auf dem Brett oder in der Hand, um sie zu bearbeiten oder zu bewegen.</p>
+                )}
+             </>
+          )}
         </div>
 
         {/* Board Preview */}
@@ -320,12 +490,17 @@ export const Editor: React.FC = () => {
           <div style={{ marginBottom: '1rem' }}>
             <h4>Gote Hand (Weiß)</h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', minHeight: '40px', background: 'var(--surface)', padding: '0.5rem', borderRadius: '4px' }}>
-              {hands.gote.map((p, i) => (
-                <div key={p.id} onClick={() => removeHandPiece('gote', i)} style={{ cursor: 'pointer' }}>
-                  <PieceIcon type={p.type} color="var(--theme-gote)" displayMode={displayMode} />
-                </div>
-              ))}
-              <button className="btn btn-secondary" style={{ padding: '0 0.5rem' }} onClick={() => addHandPiece('gote', selectedType !== 'eraser' ? selectedType : 'pawn')}>+</button>
+              {hands.gote.map((p, i) => {
+                const sel = isSelected({ location: 'hand', owner: 'gote', index: i });
+                return (
+                   <div key={p.id} onClick={() => handleHandClick('gote', i)} style={{ cursor: 'pointer', background: sel ? 'rgba(234, 179, 8, 0.3)' : 'transparent', borderRadius: '4px' }}>
+                     <PieceIcon type={p.type} color="var(--theme-gote)" displayMode={displayMode} />
+                   </div>
+                )
+              })}
+              {editorMode === 'board' && (
+                 <button className="btn btn-secondary" style={{ padding: '0 0.5rem' }} onClick={() => addHandPiece('gote', selectedType !== 'eraser' ? selectedType : 'pawn')}>+</button>
+              )}
             </div>
           </div>
 
@@ -340,24 +515,28 @@ export const Editor: React.FC = () => {
           }}>
             {board.map((row, y) => (
               <React.Fragment key={`row-${y}`}>
-                {row.map((cell, x) => (
-                  <div 
-                    key={`cell-${x}-${y}`} 
-                    onClick={() => handleCellClick(x, y)}
-                    className={`cell ${(y < promotionZoneSize || y >= height - promotionZoneSize) ? 'promotion-zone' : ''}`}
-                    style={{ 
-                      aspectRatio: '1',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {cell && (
-                      <div style={{ transform: cell.owner === 'gote' ? 'rotate(180deg)' : 'none' }}>
-                        <PieceIcon type={cell.type} color={cell.owner === 'sente' ? 'var(--theme-sente)' : 'var(--theme-gote)'} displayMode={displayMode} />
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {row.map((cell, x) => {
+                  const sel = isSelected({ location: 'board', x, y });
+                  return (
+                    <div 
+                      key={`cell-${x}-${y}`} 
+                      onClick={() => handleCellClick(x, y)}
+                      className={`cell ${(y < promotionZoneSize || y >= height - promotionZoneSize) ? 'promotion-zone' : ''}`}
+                      style={{ 
+                        aspectRatio: '1',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer',
+                        background: sel ? 'rgba(234, 179, 8, 0.5)' : undefined
+                      }}
+                    >
+                      {cell && (
+                        <div style={{ transform: cell.owner === 'gote' ? 'rotate(180deg)' : 'none' }}>
+                          <PieceIcon type={cell.type} color={cell.owner === 'sente' ? 'var(--theme-sente)' : 'var(--theme-gote)'} displayMode={displayMode} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </React.Fragment>
             ))}
           </div>
@@ -365,12 +544,17 @@ export const Editor: React.FC = () => {
           <div style={{ marginTop: '1rem' }}>
             <h4>Sente Hand (Schwarz)</h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', minHeight: '40px', background: 'var(--surface)', padding: '0.5rem', borderRadius: '4px' }}>
-              {hands.sente.map((p, i) => (
-                <div key={p.id} onClick={() => removeHandPiece('sente', i)} style={{ cursor: 'pointer' }}>
-                  <PieceIcon type={p.type} color="var(--theme-sente)" displayMode={displayMode} />
-                </div>
-              ))}
-              <button className="btn btn-secondary" style={{ padding: '0 0.5rem' }} onClick={() => addHandPiece('sente', selectedType !== 'eraser' ? selectedType : 'pawn')}>+</button>
+              {hands.sente.map((p, i) => {
+                const sel = isSelected({ location: 'hand', owner: 'sente', index: i });
+                return (
+                   <div key={p.id} onClick={() => handleHandClick('sente', i)} style={{ cursor: 'pointer', background: sel ? 'rgba(234, 179, 8, 0.3)' : 'transparent', borderRadius: '4px' }}>
+                     <PieceIcon type={p.type} color="var(--theme-sente)" displayMode={displayMode} />
+                   </div>
+                )
+              })}
+              {editorMode === 'board' && (
+                 <button className="btn btn-secondary" style={{ padding: '0 0.5rem' }} onClick={() => addHandPiece('sente', selectedType !== 'eraser' ? selectedType : 'pawn')}>+</button>
+              )}
             </div>
           </div>
           
