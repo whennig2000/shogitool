@@ -177,7 +177,7 @@ const findKing = (board: BoardState, player: Player): Position | null => {
 
 export const isKingInCheck = (board: BoardState, player: Player): boolean => {
   const kingPos = findKing(board, player);
-  if (!kingPos) return true; // Treat missing king as checkmated/dead
+  if (!kingPos) return false; // In Tsume-shogi, attacking side has no king, so it cannot be in check.
 
   const opponent = player === 'sente' ? 'gote' : 'sente';
   const height = board.length;
