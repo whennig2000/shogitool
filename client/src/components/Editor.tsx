@@ -138,15 +138,17 @@ export const Editor: React.FC = () => {
     } else {
       // Puzzle Mode logic
       if (selectedPieceRef) {
-         if (board[y][x]) {
-            // If clicking another piece on board, select it
-            if (editorPhase === 'solution' && board[y][x]!.owner !== recordingTurn) return;
+         const targetPiece = board[y][x];
+         
+         if (targetPiece && (editorPhase !== 'solution' || targetPiece.owner === recordingTurn)) {
+            // Select the piece
             setSelectedPieceRef({ location: 'board', x, y });
          } else {
-            // Move selected piece to empty cell
+            // Move selected piece (possibly capturing)
             const newBoard = board.map(row => [...row]);
             const newHands = { sente: [...hands.sente], gote: [...hands.gote] };
             let movingPiece: Piece | null = null;
+            let capturedPiece = targetPiece;
 
             if (selectedPieceRef.location === 'board') {
                movingPiece = newBoard[selectedPieceRef.y][selectedPieceRef.x];
@@ -157,6 +159,10 @@ export const Editor: React.FC = () => {
             }
 
             if (movingPiece) {
+               if (capturedPiece) {
+                  const demoted = getDemotedType(capturedPiece.type) || capturedPiece.type;
+                  newHands[recordingTurn].push(createPiece(demoted, recordingTurn));
+               }
                newBoard[y][x] = movingPiece;
                setBoard(newBoard);
                setHands(newHands);
@@ -211,6 +217,7 @@ export const Editor: React.FC = () => {
 
   // Puzzle Mode Actions
   const flipOwner = () => {
+     if (editorPhase === 'solution') return;
      if (!selectedPieceRef) return;
      const newBoard = board.map(row => [...row]);
      const newHands = { sente: [...hands.sente], gote: [...hands.gote] };
@@ -270,6 +277,7 @@ export const Editor: React.FC = () => {
   };
 
   const moveToHand = () => {
+     if (editorPhase === 'solution') return;
      if (!selectedPieceRef || selectedPieceRef.location !== 'board') return;
      const newBoard = board.map(row => [...row]);
      const newHands = { sente: [...hands.sente], gote: [...hands.gote] };
@@ -517,9 +525,11 @@ export const Editor: React.FC = () => {
                 <h3>Aktionen</h3>
                 {selectedPieceRef ? (
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
-                      <button className="btn btn-secondary" onClick={flipOwner}>Seite wechseln</button>
+                      {editorPhase === 'setup' && (
+                         <button className="btn btn-secondary" onClick={flipOwner}>Seite wechseln</button>
+                      )}
                       <button className="btn btn-secondary" onClick={togglePromote}>Befördern / Degradieren</button>
-                      {selectedPieceRef.location === 'board' && (
+                      {editorPhase === 'setup' && selectedPieceRef.location === 'board' && (
                          <button className="btn btn-secondary" onClick={moveToHand}>In die Hand</button>
                       )}
                    </div>
