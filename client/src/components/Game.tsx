@@ -36,6 +36,7 @@ export const Game = () => {
   const [selectedPos, setSelectedPos] = useState<Position | null>(null);
   const [selectedDropPiece, setSelectedDropPiece] = useState<Piece | null>(null);
   const [validMoves, setValidMoves] = useState<Position[]>([]);
+  const [hintMove, setHintMove] = useState<{from?: Position, to: Position} | null>(null);
 
   // Promotion
   const [pendingPromotion, setPendingPromotion] = useState<{from: Position, to: Position, piece: Piece, targetCell: Piece | null} | null>(null);
@@ -71,6 +72,7 @@ export const Game = () => {
       setSelectedDropPiece(null);
       setValidMoves([]);
       setPendingPromotion(null);
+      setHintMove(null);
     });
     
     socket.on('playerJoined', (data) => {
@@ -96,6 +98,10 @@ export const Game = () => {
       setChatMessages(prev => [...prev, msg]);
     });
 
+    socket.on('showHint', (move) => {
+      setHintMove({ from: move.from, to: move.to });
+    });
+
     return () => {
       socket.off('stateUpdated');
       socket.off('playerJoined');
@@ -103,6 +109,7 @@ export const Game = () => {
       socket.off('syncTime');
       socket.off('timeExpired');
       socket.off('chatMessage');
+      socket.off('showHint');
     };
   }, [roomId, navigate, role]);
 
@@ -370,6 +377,7 @@ export const Game = () => {
           selectedPos={selectedPos}
           validMoves={validMoves}
           role={role}
+          hintMove={hintMove}
           promotionZoneSize={gameState.promotionZoneSize}
           displayMode={displayMode}
           lastMove={gameState.lastMove}

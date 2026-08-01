@@ -590,23 +590,7 @@ io.on('connection', (socket: Socket) => {
     const moveIndex = room.puzzleState.currentMoveIndex || 0;
     if (moveIndex < puzzle.solution.length) {
       const hintMove = puzzle.solution[moveIndex];
-      let hintMsg = "Tipp: ";
-      
-      const xLetters = ['9', '8', '7', '6', '5', '4', '3', '2', '1'];
-      const yLetters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
-      
-      const formatCoord = (x: number, y: number) => {
-        // Find coordinates relative to the board
-        const cx = room.gameState.board[0].length - 1 - x;
-        return `(${cx + 1}, ${y + 1})`; 
-      };
-
-      if (hintMove.type === 'drop') {
-         hintMsg += `Setze eine Figur auf das Feld ${formatCoord(hintMove.to.x, hintMove.to.y)}.`;
-      } else {
-         hintMsg += `Bewege die Figur von ${formatCoord(hintMove.from!.x, hintMove.from!.y)} nach ${formatCoord(hintMove.to.x, hintMove.to.y)}.`;
-      }
-      io.to(roomId).emit('chatMessage', { role: 'bot', message: hintMsg });
+      io.to(roomId).emit('showHint', hintMove);
     }
   });
 
