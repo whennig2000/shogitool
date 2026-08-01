@@ -506,7 +506,7 @@ io.on('connection', (socket: Socket) => {
       
       if (difficulty === 'puzzle') {
         try {
-          const res = await fetch(`https://raw.githubusercontent.com/whennig2000/shogitool/master/server/puzzles.json?t=${Date.now()}`);
+          const res = await fetch(`https://raw.githubusercontent.com/whennig2000/shogitool/main/server/puzzles.json?t=${Date.now()}`);
           if (res.ok) {
             const allPuzzles: PuzzleSetup[] = await res.json();
             const availablePuzzles = allPuzzles.filter(p => p.boardId === room.boardId);
