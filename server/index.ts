@@ -375,8 +375,9 @@ io.on('connection', (socket: Socket) => {
                room.isBotMatch = false;
                room.botDifficulty = undefined;
                room.gameState.playerNames.gote = 'Player 2';
-               io.to(roomId).emit('playerDisconnected', { role: 'gote' });
+               room.gameState.timerConfigured = false;
                io.to(roomId).emit('stateUpdated', room.gameState);
+               io.to(roomId).emit('playerDisconnected', { role: 'gote' });
                return cb({ success: true });
             }
 
@@ -391,10 +392,24 @@ io.on('connection', (socket: Socket) => {
               ]
             });
           } else {
-             io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Konnte keine Puzzles laden.' });
+             io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Konnte keine Puzzles laden. Ich verlasse den Raum.' });
+             room.gotePlayer = null;
+             room.isBotMatch = false;
+             room.botDifficulty = undefined;
+             room.gameState.playerNames.gote = 'Player 2';
+             room.gameState.timerConfigured = false;
+             io.to(roomId).emit('stateUpdated', room.gameState);
+             io.to(roomId).emit('playerDisconnected', { role: 'gote' });
           }
         } catch (e) {
-          io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Fehler beim Laden der Puzzles.' });
+          io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Fehler beim Laden der Puzzles. Ich verlasse den Raum.' });
+          room.gotePlayer = null;
+          room.isBotMatch = false;
+          room.botDifficulty = undefined;
+          room.gameState.playerNames.gote = 'Player 2';
+          room.gameState.timerConfigured = false;
+          io.to(roomId).emit('stateUpdated', room.gameState);
+          io.to(roomId).emit('playerDisconnected', { role: 'gote' });
         }
       } else {
         if (room.gameState.turn === 'gote') {

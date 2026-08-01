@@ -295,7 +295,11 @@ export const Editor: React.FC = () => {
       });
 
       if (!putRes.ok) {
-        throw new Error('Fehler beim Speichern (Token ungültig?)');
+        if (putRes.status === 401 || putRes.status === 403) {
+           localStorage.removeItem('github_token');
+           setGithubToken('');
+        }
+        throw new Error('Fehler beim Speichern (Token ungültig oder abgelaufen?)');
       }
 
       alert(`${isPuzzle ? 'Puzzle' : 'Setup'} erfolgreich auf GitHub gespeichert!`);
