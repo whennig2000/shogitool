@@ -188,7 +188,8 @@ function loadPuzzle(roomId: string, puzzleIndex: number, retry = false) {
     playerNames: room.gameState.playerNames,
     lastMove: null,
     promotionZoneSize: puzzle.promotionZoneSize || room.gameState.promotionZoneSize,
-    timerEnabled: false
+    timerEnabled: false,
+    timerConfigured: true
   }));
   
   room.puzzleState.movesRemaining = puzzle.movesToMate;
