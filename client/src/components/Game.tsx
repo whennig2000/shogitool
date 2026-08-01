@@ -11,6 +11,7 @@ import { Komadai } from './Komadai';
 interface ChatMessage {
   role: string;
   message: string;
+  options?: { label: string, value: string }[];
 }
 
 export const Game = () => {
@@ -401,6 +402,29 @@ export const Game = () => {
                   <strong style={{ color: m.role === 'sente' ? 'var(--primary)' : m.role === 'gote' ? 'var(--secondary)' : 'inherit' }}>
                     {m.role === 'bot' ? 'Bot' : m.role === 'system' ? 'System' : gameState.playerNames[m.role as Player]}: 
                   </strong> {m.message}
+                  {m.options && (
+                    <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <select 
+                        id={`puzzle-select-${i}`}
+                        style={{ padding: '0.5rem', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }}
+                      >
+                        {m.options.map((opt, idx) => (
+                          <option key={idx} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                      <button 
+                        className="btn btn-secondary"
+                        onClick={() => {
+                          const selectEl = document.getElementById(`puzzle-select-${i}`) as HTMLSelectElement;
+                          if (selectEl) {
+                            socket.emit('selectPuzzle', roomId, selectEl.value);
+                          }
+                        }}
+                      >
+                        Starten
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
               <div ref={chatEndRef} />

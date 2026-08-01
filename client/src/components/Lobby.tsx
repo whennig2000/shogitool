@@ -46,7 +46,7 @@ export const Lobby = () => {
 
   const handleCreateRoom = () => {
     const setup = selectedSetupId === 'standard' ? null : customSetups.find(s => s.id === selectedSetupId);
-    socket.emit('createRoom', { customSetup: setup }, ({ roomId, role }: any) => {
+    socket.emit('createRoom', { customSetup: setup, boardId: selectedSetupId }, ({ roomId, role }: any) => {
       navigate(`/room/${roomId}?role=${role}`);
     });
   };

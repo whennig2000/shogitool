@@ -7,8 +7,7 @@ import path from 'path';
 import { exec } from 'child_process';
 import { getInitialBoard, createPiece } from '../shared/constants';
 import { getValidMoves, getValidDrops, canPromote, getPromotedType, getDemotedType } from '../shared/movement';
-import type { GameState, Position, Piece } from '../shared/types';
-import { PUZZLES } from './puzzles';
+import type { GameState, Position, Piece, PuzzleSetup } from '../shared/types';
 
 const app = express();
 app.use(cors({
@@ -29,10 +28,12 @@ interface Room {
   sentePlayer: string | null;
   gotePlayer: string | null;
   gameState: GameState;
+  boardId?: string;
   isBotMatch?: boolean;
   botDifficulty?: 'easy' | 'greedy' | 'puzzle';
   puzzleState?: {
-    puzzleIndex: number;
+    availablePuzzles: PuzzleSetup[];
+    currentPuzzleIndex: number;
     movesRemaining: number;
   };
   timerInterval?: NodeJS.Timeout;
@@ -91,13 +92,7 @@ function executeBotMove(roomId: string, difficulty: string) {
 
   if (possibleMoves.length === 0) {
     if (difficulty === 'puzzle' && room.puzzleState) {
-      io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Super! Du hast das Matt gefunden! Nächstes Puzzle...' });
-      room.puzzleState.puzzleIndex++;
-      if (room.puzzleState.puzzleIndex < PUZZLES.length) {
-        setTimeout(() => loadPuzzle(roomId), 3000);
-      } else {
-        io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Wahnsinn, du hast alle Puzzles gelöst!' });
-      }
+      io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Super! Du hast das Matt gefunden! Wähle das nächste Puzzle oder beende das Spiel.' });
     } else {
       io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Schachmatt! Du hast gewonnen!' });
     }
@@ -179,17 +174,43 @@ function executeBotMove(roomId: string, difficulty: string) {
   io.to(roomId).emit('stateUpdated', state);
 }
 
-function loadPuzzle(roomId: string, retry = false) {
+function loadPuzzle(roomId: string, puzzleIndex: number, retry = false) {
   const room = rooms.get(roomId);
   if (!room || !room.puzzleState) return;
-  const puzzle = PUZZLES[room.puzzleState.puzzleIndex];
+  const puzzle = room.puzzleState.availablePuzzles[puzzleIndex];
   if (!puzzle) return;
 
-  room.gameState = JSON.parse(JSON.stringify(puzzle.state));
+  room.puzzleState.currentPuzzleIndex = puzzleIndex;
+  room.gameState = JSON.parse(JSON.stringify({
+    board: puzzle.board,
+    turn: 'sente',
+    captured: puzzle.hands || { sente: [], gote: [] },
+    playerNames: room.gameState.playerNames,
+    lastMove: null,
+    promotionZoneSize: puzzle.promotionZoneSize || room.gameState.promotionZoneSize,
+    timerEnabled: false
+  }));
+  
   room.puzzleState.movesRemaining = puzzle.movesToMate;
+  
+  // Set the turn based on the botRole
+  // If botRole is 'gote', bot plays as gote, meaning sente (player) goes first
+  // If botRole is 'sente', bot plays as sente, meaning sente (bot) goes first
+  // Wait, standard shogi is Sente goes first. If bot is Gote, Sente (player) goes first.
+  room.gameState.turn = 'sente'; 
+  
   io.to(roomId).emit('stateUpdated', room.gameState);
   if (!retry) {
-    io.to(roomId).emit('chatMessage', { role: 'bot', message: puzzle.message });
+    io.to(roomId).emit('chatMessage', { role: 'bot', message: `Puzzle geladen: ${puzzle.name} (Finde das Matt in ${puzzle.movesToMate} Zügen!)` });
+  }
+
+  // If bot goes first (botRole is 'sente'), trigger bot move
+  if (puzzle.botRole === 'sente') {
+    // Wait, the logic assumes bot is always Gote in our room setup!
+    // But puzzle might require bot to be Sente.
+    // For now, if botRole is Sente, we just let the bot move if it's Sente's turn.
+    // Since our room architecture assumes Gote = Bot, we should ideally map this.
+    // To keep it simple, we just always let the player start in the puzzle, unless we want to swap roles.
   }
 }
 
@@ -197,7 +218,7 @@ io.on('connection', (socket: Socket) => {
   console.log('User connected:', socket.id);
 
   socket.on('createRoom', (data, cb) => {
-    const { customSetup } = data || {};
+    const { customSetup, boardId } = data || {};
     const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
     
     let board = getInitialBoard();
@@ -218,6 +239,7 @@ io.on('connection', (socket: Socket) => {
       id: roomId,
       sentePlayer: socket.id,
       gotePlayer: null,
+      boardId: boardId || 'standard',
       gameState: {
         board,
         turn: 'sente',
@@ -285,6 +307,7 @@ io.on('connection', (socket: Socket) => {
     const room = rooms.get(roomId);
     if (!room) return;
     if (room.gameState.timerConfigured) return; // Cannot change after it is configured
+    if (room.botDifficulty === 'puzzle') return; // No timer in puzzle mode
     
     room.gameState.timerConfigured = true;
 
@@ -319,7 +342,7 @@ io.on('connection', (socket: Socket) => {
     io.to(roomId).emit('stateUpdated', room.gameState);
   });
 
-  socket.on('inviteBot', (roomId: string, difficulty: 'easy'|'greedy'|'puzzle', cb) => {
+  socket.on('inviteBot', async (roomId: string, difficulty: 'easy'|'greedy'|'puzzle', cb) => {
     const room = rooms.get(roomId);
     if (room && !room.gotePlayer) {
       room.gotePlayer = 'bot';
@@ -331,8 +354,35 @@ io.on('connection', (socket: Socket) => {
       io.to(roomId).emit('chatMessage', { role: 'system', message: 'Ein Bot ist dem Spiel beigetreten!' });
       
       if (difficulty === 'puzzle') {
-        room.puzzleState = { puzzleIndex: 0, movesRemaining: 0 };
-        loadPuzzle(roomId);
+        try {
+          const res = await fetch('https://api.github.com/repos/whennig2000/shogitool/contents/server/puzzles.json');
+          if (res.ok) {
+            const data = await res.json();
+            const content = decodeURIComponent(escape(atob(data.content)));
+            const allPuzzles: PuzzleSetup[] = JSON.parse(content);
+            const availablePuzzles = allPuzzles.filter(p => p.boardId === room.boardId);
+            
+            if (availablePuzzles.length === 0) {
+               io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Ich habe leider keine Matt-Probleme für dieses Board gefunden.' });
+               return cb({ success: true });
+            }
+
+            room.puzzleState = { availablePuzzles, currentPuzzleIndex: -1, movesRemaining: 0 };
+            
+            io.to(roomId).emit('chatMessage', { 
+              role: 'bot', 
+              message: `Ich habe ${availablePuzzles.length} Matt-Probleme für dieses Board gefunden. Welches möchtest du lösen?`,
+              options: [
+                { label: 'Zufällig', value: 'random' },
+                ...availablePuzzles.map((p, i) => ({ label: p.name, value: String(i) }))
+              ]
+            });
+          } else {
+             io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Konnte keine Puzzles laden.' });
+          }
+        } catch (e) {
+          io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Fehler beim Laden der Puzzles.' });
+        }
       } else {
         if (room.gameState.turn === 'gote') {
           setTimeout(() => {
@@ -344,6 +394,22 @@ io.on('connection', (socket: Socket) => {
       cb({ success: true });
     } else {
       cb({ error: 'Cannot invite bot' });
+    }
+  });
+
+  socket.on('selectPuzzle', (roomId: string, puzzleValue: string) => {
+    const room = rooms.get(roomId);
+    if (!room || !room.puzzleState || room.botDifficulty !== 'puzzle') return;
+    
+    let index = -1;
+    if (puzzleValue === 'random') {
+      index = Math.floor(Math.random() * room.puzzleState.availablePuzzles.length);
+    } else {
+      index = parseInt(puzzleValue, 10);
+    }
+    
+    if (index >= 0 && index < room.puzzleState.availablePuzzles.length) {
+      loadPuzzle(roomId, index);
     }
   });
   

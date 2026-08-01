@@ -65,6 +65,12 @@ export interface CustomSetup {
   promotionZoneSize?: number;
 }
 
+export interface PuzzleSetup extends CustomSetup {
+  boardId: string;
+  botRole: Player;
+  movesToMate: number;
+}
+
 export interface ThemeConfig {
   id: string;
   name: string;

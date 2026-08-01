@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { BoardState, Piece, PieceType, Player, CustomSetup } from '../../../shared/types';
+import type { BoardState, Piece, PieceType, Player, CustomSetup, PuzzleSetup } from '../../../shared/types';
 import { createPiece } from '../../../shared/constants';
 import { PieceIcon } from './PieceIcon';
 import { getDisplayMode } from './Settings';
@@ -11,12 +11,20 @@ export const Editor: React.FC = () => {
   const navigate = useNavigate();
   const displayMode = getDisplayMode();
   
+  const [editorMode, setEditorMode] = useState<'board' | 'puzzle'>('board');
+  const [customSetups, setCustomSetups] = useState<CustomSetup[]>([]);
+  
   const [name, setName] = useState('My Custom Setup');
   const [width, setWidth] = useState(9);
   const [height, setHeight] = useState(9);
   const [promotionZoneSize, setPromotionZoneSize] = useState(3);
   const [board, setBoard] = useState<BoardState>(Array(9).fill(null).map(() => Array(9).fill(null)));
   const [hands, setHands] = useState<{ sente: Piece[]; gote: Piece[] }>({ sente: [], gote: [] });
+  
+  // Puzzle specifics
+  const [boardId, setBoardId] = useState('standard');
+  const [botRole, setBotRole] = useState<Player>('gote');
+  const [movesToMate, setMovesToMate] = useState(3);
   
   const [selectedType, setSelectedType] = useState<PieceType | 'eraser'>('king');
   const [selectedOwner, setSelectedOwner] = useState<Player>('sente');
@@ -25,10 +33,47 @@ export const Editor: React.FC = () => {
   const [githubToken, setGithubToken] = useState(localStorage.getItem('github_token') || '');
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    // Fetch custom setups for puzzle base board selection
+    const fetchSetups = async () => {
+      try {
+        const res = await fetch('https://api.github.com/repos/whennig2000/shogitool/contents/server/setups.json');
+        if (res.ok) {
+          const data = await res.json();
+          const content = decodeURIComponent(escape(atob(data.content)));
+          setCustomSetups(JSON.parse(content));
+        }
+      } catch (e) {
+        console.error('Failed to load setups', e);
+      }
+    };
+    fetchSetups();
+  }, []);
+
+  const handleBaseBoardChange = (newBoardId: string) => {
+    setBoardId(newBoardId);
+    let newWidth = 9;
+    let newHeight = 9;
+    let newZone = 3;
+    if (newBoardId !== 'standard') {
+      const setup = customSetups.find(s => s.id === newBoardId);
+      if (setup) {
+        newWidth = setup.width;
+        newHeight = setup.height;
+        newZone = setup.promotionZoneSize || 0;
+      }
+    }
+    updateSize(newWidth, newHeight);
+    setPromotionZoneSize(newZone);
+    // Reset board content
+    setBoard(Array(newHeight).fill(null).map(() => Array(newWidth).fill(null)));
+    setHands({ sente: [], gote: [] });
+  };
+
   const updateSize = (newWidth: number, newHeight: number) => {
     const newBoard = Array(newHeight).fill(null).map((_, y) => 
       Array(newWidth).fill(null).map((_, x) => {
-        if (y < height && x < width) {
+        if (board[y] && board[y][x] && y < height && x < width) {
           return board[y][x];
         }
         return null;
@@ -64,36 +109,34 @@ export const Editor: React.FC = () => {
     });
   };
 
-  const pushToGithub = async (setup: CustomSetup, token: string) => {
+  const pushToGithub = async (fileData: any, token: string, isPuzzle: boolean) => {
     setIsSaving(true);
     try {
-      // 1. Fetch current file to get SHA and existing setups
-      const apiUrl = 'https://api.github.com/repos/whennig2000/shogitool/contents/server/setups.json';
+      const filePath = isPuzzle ? 'server/puzzles.json' : 'server/setups.json';
+      const apiUrl = `https://api.github.com/repos/whennig2000/shogitool/contents/${filePath}`;
+      
       const getRes = await fetch(apiUrl, {
         headers: { 'Authorization': `token ${token}` }
       });
       
-      let existingSetups: CustomSetup[] = [];
+      let existingData: any[] = [];
       let sha = '';
       if (getRes.ok) {
         const data = await getRes.json();
         sha = data.sha;
         const content = decodeURIComponent(escape(atob(data.content)));
-        existingSetups = JSON.parse(content);
+        existingData = JSON.parse(content);
       }
 
-      // 2. Append new setup
-      if (existingSetups.some(s => s.name === setup.name)) {
-        alert('Ein Setup mit diesem Namen existiert bereits auf GitHub.');
+      if (existingData.some(s => s.name === fileData.name)) {
+        alert(`Ein ${isPuzzle ? 'Puzzle' : 'Setup'} mit diesem Namen existiert bereits auf GitHub.`);
         setIsSaving(false);
         return;
       }
-      existingSetups.push(setup);
+      existingData.push(fileData);
 
-      // 3. Encode new content (unicode safe)
-      const newContent = btoa(unescape(encodeURIComponent(JSON.stringify(existingSetups, null, 2))));
+      const newContent = btoa(unescape(encodeURIComponent(JSON.stringify(existingData, null, 2))));
 
-      // 4. PUT to GitHub
       const putRes = await fetch(apiUrl, {
         method: 'PUT',
         headers: {
@@ -101,7 +144,7 @@ export const Editor: React.FC = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          message: `Add new setup: ${setup.name}`,
+          message: `Add new ${isPuzzle ? 'puzzle' : 'setup'}: ${fileData.name}`,
           content: newContent,
           sha: sha || undefined
         })
@@ -111,7 +154,7 @@ export const Editor: React.FC = () => {
         throw new Error('Fehler beim Speichern (Token ungültig?)');
       }
 
-      alert('Setup erfolgreich auf GitHub gespeichert!');
+      alert(`${isPuzzle ? 'Puzzle' : 'Setup'} erfolgreich auf GitHub gespeichert!`);
       localStorage.setItem('github_token', token);
       setShowTokenPrompt(false);
       navigate('/');
@@ -131,45 +174,100 @@ export const Editor: React.FC = () => {
   };
 
   const executeSave = (token: string) => {
-    const setup: CustomSetup = {
-      id: `setup_${Date.now()}`,
-      name,
-      width,
-      height,
-      board,
-      hands,
-      promotionZoneSize
-    };
-    pushToGithub(setup, token);
+    if (editorMode === 'board') {
+      const setup: CustomSetup = {
+        id: `setup_${Date.now()}`,
+        name,
+        width,
+        height,
+        board,
+        hands,
+        promotionZoneSize
+      };
+      pushToGithub(setup, token, false);
+    } else {
+      const puzzle: PuzzleSetup = {
+        id: `puzzle_${Date.now()}`,
+        name,
+        boardId,
+        botRole,
+        movesToMate,
+        width,
+        height,
+        board,
+        hands,
+        promotionZoneSize
+      };
+      pushToGithub(puzzle, token, true);
+    }
   };
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h2 className="title" style={{ margin: 0 }}>Board Editor</h2>
-        <button className="btn btn-secondary" onClick={() => navigate('/')}>🔙 Zurück zur Lobby</button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
+        <h2 className="title" style={{ margin: 0 }}>
+          {editorMode === 'board' ? 'Board Editor' : 'Matt-Problem Creator'}
+        </h2>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button 
+            className={`btn ${editorMode === 'board' ? '' : 'btn-secondary'}`} 
+            onClick={() => { setEditorMode('board'); setName('My Custom Setup'); }}
+          >
+            Board
+          </button>
+          <button 
+            className={`btn ${editorMode === 'puzzle' ? '' : 'btn-secondary'}`} 
+            onClick={() => { setEditorMode('puzzle'); setName('My Custom Puzzle'); }}
+          >
+            Puzzle
+          </button>
+          <button className="btn btn-secondary" onClick={() => navigate('/')}>🔙 Lobby</button>
+        </div>
       </div>
 
       <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
         <div>
-          <label style={{ display: 'block', marginBottom: '0.5rem' }}>Name der Aufstellung</label>
+          <label style={{ display: 'block', marginBottom: '0.5rem' }}>Name</label>
           <input type="text" value={name} onChange={e => setName(e.target.value)} style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }} />
         </div>
         
-        <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem' }}>Breite (x)</label>
-            <input type="number" min={3} max={15} value={width} onChange={e => updateSize(parseInt(e.target.value), height)} style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }} />
+        {editorMode === 'board' ? (
+          <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem' }}>Breite (x)</label>
+              <input type="number" min={3} max={15} value={width} onChange={e => updateSize(parseInt(e.target.value), height)} style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem' }}>Höhe (y)</label>
+              <input type="number" min={5} max={15} value={height} onChange={e => updateSize(width, parseInt(e.target.value))} style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem' }}>Beförderungszone (Reihen)</label>
+              <input type="number" min={0} max={5} value={promotionZoneSize} onChange={e => setPromotionZoneSize(parseInt(e.target.value))} style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }} />
+            </div>
           </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem' }}>Höhe (y)</label>
-            <input type="number" min={5} max={15} value={height} onChange={e => updateSize(width, parseInt(e.target.value))} style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }} />
+        ) : (
+          <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem' }}>Basis Board</label>
+              <select value={boardId} onChange={e => handleBaseBoardChange(e.target.value)} style={{ width: '100%', padding: '0.5rem', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }}>
+                <option value="standard">Standard (9x9)</option>
+                {customSetups.map(s => <option key={s.id} value={s.id}>{s.name} ({s.width}x{s.height})</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem' }}>Bot Rolle (Verlierer)</label>
+              <select value={botRole} onChange={e => setBotRole(e.target.value as Player)} style={{ width: '100%', padding: '0.5rem', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }}>
+                <option value="gote">Gote (Weiß)</option>
+                <option value="sente">Sente (Schwarz)</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem' }}>Züge bis Matt</label>
+              <input type="number" min={1} max={99} value={movesToMate} onChange={e => setMovesToMate(parseInt(e.target.value))} style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }} />
+            </div>
           </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem' }}>Beförderungszone (Reihen)</label>
-            <input type="number" min={0} max={5} value={promotionZoneSize} onChange={e => setPromotionZoneSize(parseInt(e.target.value))} style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px' }} />
-          </div>
-        </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
@@ -277,7 +375,7 @@ export const Editor: React.FC = () => {
           </div>
           
           <button className="btn" style={{ marginTop: '2rem', width: '100%' }} onClick={saveSetup} disabled={isSaving}>
-            {isSaving ? '⏳ Speichere auf GitHub...' : '💾 Setup auf GitHub Speichern'}
+            {isSaving ? '⏳ Speichere auf GitHub...' : (editorMode === 'board' ? '💾 Setup auf GitHub Speichern' : '💾 Puzzle auf GitHub Speichern')}
           </button>
         </div>
       </div>
@@ -286,7 +384,7 @@ export const Editor: React.FC = () => {
         <div className="modal-overlay">
           <div className="modal">
             <h3>GitHub Token benötigt</h3>
-            <p style={{ opacity: 0.8, marginBottom: '1rem', fontSize: '0.9rem' }}>Um Boards direkt in deinem Repository (whennig2000/shogitool) zu speichern, wird ein Personal Access Token mit Repo-Rechten benötigt.</p>
+            <p style={{ opacity: 0.8, marginBottom: '1rem', fontSize: '0.9rem' }}>Um {editorMode === 'board' ? 'Boards' : 'Puzzles'} direkt in deinem Repository (whennig2000/shogitool) zu speichern, wird ein Personal Access Token mit Repo-Rechten benötigt.</p>
             <input 
               type="password" 
               placeholder="ghp_xxxxxxxxxxxx" 
