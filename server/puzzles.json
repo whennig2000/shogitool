@@ -76,5 +76,84 @@
       ]
     },
     "promotionZoneSize": 2
+  },
+  {
+    "id": "puzzle_1785581763176",
+    "name": "simple-test",
+    "boardId": "setup_1785419143975",
+    "botRole": "gote",
+    "movesToMate": 1,
+    "width": 3,
+    "height": 5,
+    "board": [
+      [
+        {
+          "id": "piece_7",
+          "type": "king",
+          "owner": "gote"
+        },
+        null,
+        {
+          "id": "piece_3",
+          "type": "gold",
+          "owner": "sente"
+        }
+      ],
+      [
+        null,
+        {
+          "id": "piece_1",
+          "type": "lance",
+          "owner": "sente"
+        },
+        null
+      ],
+      [
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        {
+          "id": "piece_0",
+          "type": "king",
+          "owner": "sente"
+        }
+      ]
+    ],
+    "hands": {
+      "sente": [
+        {
+          "id": "piece_2",
+          "type": "pawn",
+          "owner": "sente"
+        }
+      ],
+      "gote": [
+        {
+          "id": "piece_6",
+          "type": "lance",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_5",
+          "type": "pawn",
+          "owner": "gote"
+        },
+        {
+          "id": "piece_4",
+          "type": "gold",
+          "owner": "gote"
+        }
+      ]
+    },
+    "promotionZoneSize": 2
   }
 ]
