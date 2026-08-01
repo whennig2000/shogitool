@@ -212,7 +212,17 @@
       ],
       "gote": []
     },
-    "promotionZoneSize": 3
+    "promotionZoneSize": 3,
+    "solution": [
+      {
+        "type": "drop",
+        "to": {
+          "x": 4,
+          "y": 1
+        },
+        "pieceType": "gold"
+      }
+    ]
   },
   {
     "id": "puzzle_1785586048131_2",
@@ -349,7 +359,17 @@
       ],
       "gote": []
     },
-    "promotionZoneSize": 3
+    "promotionZoneSize": 3,
+    "solution": [
+      {
+        "type": "drop",
+        "to": {
+          "x": 1,
+          "y": 2
+        },
+        "pieceType": "knight"
+      }
+    ]
   },
   {
     "id": "puzzle_1785617252893",

@@ -419,15 +419,8 @@ io.on('connection', (socket: Socket) => {
                
                // If player just finished the puzzle
                if (room.puzzleState.currentMoveIndex >= puzzle.solution.length) {
-                  io.to(roomId).emit('chatMessage', { 
-                    role: 'bot', 
-                    message: 'Super! Du hast das Matt gefunden! Wähle das nächste Puzzle oder beende das Spiel.',
-                    options: [
-                      { label: 'Zufällig', value: 'random' },
-                      ...room.puzzleState.availablePuzzles.map((p, i) => ({ label: p.name, value: String(i) }))
-                    ]
-                  });
-                  // Allow the state update to go through so they see the final move
+                  // Allow the state update to go through so they see the final move.
+                  // The executeBotMove function will detect checkmate and emit the victory message.
                }
             }
          }
