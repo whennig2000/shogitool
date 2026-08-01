@@ -31,6 +31,8 @@ export const Editor: React.FC = () => {
   const [editorPhase, setEditorPhase] = useState<'setup' | 'solution'>('setup');
   const [solution, setSolution] = useState<RecordedMove[]>([]);
   const [recordingTurn, setRecordingTurn] = useState<Player>('sente');
+  const [initialBoard, setInitialBoard] = useState<BoardState | null>(null);
+  const [initialHands, setInitialHands] = useState<{ sente: Piece[]; gote: Piece[] } | null>(null);
   
   // Board Editor Tools
   const [selectedType, setSelectedType] = useState<PieceType | 'eraser'>('king');
@@ -395,8 +397,8 @@ export const Editor: React.FC = () => {
         solution,
         width,
         height,
-        board,
-        hands,
+        board: initialBoard || board,
+        hands: initialHands || hands,
         promotionZoneSize
       };
       pushToGithub(puzzle, token, true);
@@ -630,12 +632,23 @@ export const Editor: React.FC = () => {
              </button>
           ) : (
              editorPhase === 'setup' ? (
-               <button className="btn" style={{ marginTop: '2rem', width: '100%', background: 'var(--theme-sente)', color: '#fff' }} onClick={() => { setEditorPhase('solution'); setSolution([]); setRecordingTurn(botRole === 'gote' ? 'sente' : 'gote'); }}>
+               <button className="btn" style={{ marginTop: '2rem', width: '100%', background: 'var(--theme-sente)', color: '#fff' }} onClick={() => { 
+                  setInitialBoard(JSON.parse(JSON.stringify(board)));
+                  setInitialHands(JSON.parse(JSON.stringify(hands)));
+                  setEditorPhase('solution'); 
+                  setSolution([]); 
+                  setRecordingTurn(botRole === 'gote' ? 'sente' : 'gote'); 
+               }}>
                  🔴 Lösung aufzeichnen
                </button>
              ) : (
                <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-                 <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => { setEditorPhase('setup'); setSolution([]); }}>
+                 <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => { 
+                    setEditorPhase('setup'); 
+                    if (initialBoard) setBoard(initialBoard);
+                    if (initialHands) setHands(initialHands);
+                    setSolution([]); 
+                 }}>
                    ⏹️ Abbrechen
                  </button>
                  <button className="btn" style={{ flex: 2 }} onClick={saveSetup} disabled={isSaving || solution.length === 0}>
