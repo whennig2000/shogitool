@@ -8,6 +8,7 @@ import { exec } from 'child_process';
 import { getInitialBoard, createPiece } from '../shared/constants';
 import { getValidMoves, getValidDrops, canPromote, getPromotedType, getDemotedType } from '../shared/movement';
 import type { GameState, Position, Piece } from '../shared/types';
+import { PUZZLES } from './puzzles';
 
 const app = express();
 app.use(cors({
@@ -30,6 +31,10 @@ interface Room {
   gameState: GameState;
   isBotMatch?: boolean;
   botDifficulty?: 'easy' | 'greedy' | 'puzzle';
+  puzzleState?: {
+    puzzleIndex: number;
+    movesRemaining: number;
+  };
   timerInterval?: NodeJS.Timeout;
   lastTick?: number;
 }
@@ -42,11 +47,6 @@ function executeBotMove(roomId: string, difficulty: string) {
   const state = room.gameState;
   const board = state.board;
   const gote = 'gote';
-
-  if (difficulty === 'puzzle') {
-    io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Puzzle-Modus: In dieser Demo agiere ich wie ein normaler Bot, versuche trotzdem zu gewinnen!' });
-    difficulty = 'greedy'; 
-  }
 
   // Collect all possible moves
   const possibleMoves: any[] = [];
@@ -90,7 +90,23 @@ function executeBotMove(roomId: string, difficulty: string) {
   }
 
   if (possibleMoves.length === 0) {
-    io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Schachmatt! Du hast gewonnen!' });
+    if (difficulty === 'puzzle' && room.puzzleState) {
+      io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Super! Du hast das Matt gefunden! Nächstes Puzzle...' });
+      room.puzzleState.puzzleIndex++;
+      if (room.puzzleState.puzzleIndex < PUZZLES.length) {
+        setTimeout(() => loadPuzzle(roomId), 3000);
+      } else {
+        io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Wahnsinn, du hast alle Puzzles gelöst!' });
+      }
+    } else {
+      io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Schachmatt! Du hast gewonnen!' });
+    }
+    return;
+  }
+
+  if (difficulty === 'puzzle' && room.puzzleState && room.puzzleState.movesRemaining <= 0) {
+    io.to(roomId).emit('chatMessage', { role: 'bot', message: 'Nicht geschafft! Du hast das Matt nicht in der vorgegebenen Zügezahl gefunden. Versuch es nochmal!' });
+    setTimeout(() => loadPuzzle(roomId, true), 3000);
     return;
   }
 
@@ -156,7 +172,25 @@ function executeBotMove(roomId: string, difficulty: string) {
     io.to(roomId).emit('chatMessage', { role: 'bot', message: tips[Math.floor(Math.random() * tips.length)] });
   }
 
+  if (difficulty === 'puzzle' && room.puzzleState) {
+    room.puzzleState.movesRemaining--;
+  }
+
   io.to(roomId).emit('stateUpdated', state);
+}
+
+function loadPuzzle(roomId: string, retry = false) {
+  const room = rooms.get(roomId);
+  if (!room || !room.puzzleState) return;
+  const puzzle = PUZZLES[room.puzzleState.puzzleIndex];
+  if (!puzzle) return;
+
+  room.gameState = JSON.parse(JSON.stringify(puzzle.state));
+  room.puzzleState.movesRemaining = puzzle.movesToMate;
+  io.to(roomId).emit('stateUpdated', room.gameState);
+  if (!retry) {
+    io.to(roomId).emit('chatMessage', { role: 'bot', message: puzzle.message });
+  }
 }
 
 io.on('connection', (socket: Socket) => {
@@ -237,6 +271,9 @@ io.on('connection', (socket: Socket) => {
       socket.to(roomId).emit('stateUpdated', newState);
 
       if (room.isBotMatch && newState.turn === 'gote') {
+        if (room.botDifficulty === 'puzzle' && room.puzzleState) {
+          room.puzzleState.movesRemaining--;
+        }
         setTimeout(() => {
           executeBotMove(roomId, room.botDifficulty || 'easy');
         }, 1000);
@@ -293,10 +330,15 @@ io.on('connection', (socket: Socket) => {
       io.to(roomId).emit('playerJoined', { role: 'gote' });
       io.to(roomId).emit('chatMessage', { role: 'system', message: 'Ein Bot ist dem Spiel beigetreten!' });
       
-      if (room.gameState.turn === 'gote') {
-        setTimeout(() => {
-          executeBotMove(roomId, difficulty);
-        }, 1000);
+      if (difficulty === 'puzzle') {
+        room.puzzleState = { puzzleIndex: 0, movesRemaining: 0 };
+        loadPuzzle(roomId);
+      } else {
+        if (room.gameState.turn === 'gote') {
+          setTimeout(() => {
+            executeBotMove(roomId, difficulty);
+          }, 1000);
+        }
       }
       
       cb({ success: true });

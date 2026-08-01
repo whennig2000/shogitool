@@ -25,6 +25,8 @@ export const Game = () => {
   const [displayMode, setDisplayMode] = useState(getDisplayMode());
   const [showGameSettings, setShowGameSettings] = useState(false);
   const [showThemeSettings, setShowThemeSettings] = useState(false);
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [hideGameOverModal, setHideGameOverModal] = useState(false);
   const [myNameInput, setMyNameInput] = useState('');
   const [botDifficulty, setBotDifficulty] = useState<'easy'|'greedy'|'puzzle'>('easy');
   const [opponentConnected, setOpponentConnected] = useState(false);
@@ -281,8 +283,11 @@ export const Game = () => {
 
   const amICheckmated = amIInCheck && !myLegalMoves;
   const opponentCheckmated = opponentInCheck && !opponentLegalMoves;
+  const amIStalemated = !amIInCheck && !myLegalMoves;
+  const opponentStalemated = !opponentInCheck && !opponentLegalMoves;
+  const isStalemate = amIStalemated || opponentStalemated;
   const timerLoser = (gameState as any).timerExpired ? (gameState as any).winner === role ? (role === 'sente' ? 'gote' : 'sente') : role : null;
-  const isGameOver = amICheckmated || opponentCheckmated || timerLoser !== null;
+  const isGameOver = amICheckmated || opponentCheckmated || isStalemate || timerLoser !== null;
 
   const formatTime = (seconds?: number) => {
     if (seconds === undefined) return null;
@@ -299,6 +304,11 @@ export const Game = () => {
           <div>
             Du bist: <strong style={{ color: role === 'sente' ? 'var(--theme-sente)' : 'var(--theme-gote)' }}>{gameState.playerNames[role]}</strong>
           </div>
+          {displayMode === 'images' && (
+            <button className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '1rem' }} onClick={() => setShowRulesModal(true)}>
+              ℹ️ Regeln
+            </button>
+          )}
           <button className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '1rem' }} onClick={() => setShowGameSettings(true)}>
             ⚙️ Optionen
           </button>
@@ -319,9 +329,10 @@ export const Game = () => {
         {isGameOver ? (
           <span style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
             {timerLoser 
-              ? `ZEIT ABGELAUFEN! ${gameState.playerNames[timerLoser === role ? opponentRole : role]} gewinnt!`
-              : `SCHACHMATT! ${amICheckmated ? gameState.playerNames[opponentRole] : gameState.playerNames[role]} gewinnt!`
-            }
+              ? `SPIELENDE! ${gameState.playerNames[timerLoser === 'sente' ? 'gote' : 'sente']} gewinnt durch Zeitablauf!` 
+              : isStalemate 
+                ? 'PATT! Das Spiel endet unentschieden.'
+                : `SCHACHMATT! ${amICheckmated ? gameState.playerNames[opponentRole] : gameState.playerNames[role]} gewinnt!`}
           </span>
         ) : (
           <>
@@ -402,18 +413,34 @@ export const Game = () => {
         </div>
       </div>
 
-      {isGameOver && (
+      {isGameOver && !hideGameOverModal && (
         <div className="modal-overlay" style={{ zIndex: 1000, background: 'rgba(0,0,0,0.8)' }}>
           <div className="modal" style={{ textAlign: 'center', background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <h2 style={{ marginBottom: '1rem', fontSize: '2rem' }}>
-              {timerLoser ? 'Zeit abgelaufen!' : 'Schachmatt!'}
+              {timerLoser ? 'Zeit abgelaufen!' : isStalemate ? 'Patt!' : 'Schachmatt!'}
             </h2>
             <p style={{ fontSize: '1.2rem', marginBottom: '2rem' }}>
               {timerLoser 
                 ? (timerLoser === role ? 'Deine Zeit ist um. Du hast verloren!' : 'Die Zeit deines Gegners ist um. Du hast gewonnen!')
-                : (amICheckmated ? 'Du wurdest mattgesetzt. Du hast verloren!' : 'Du hast gewonnen!')}
+                : isStalemate 
+                  ? 'Kein Spieler kann mehr ziehen. Unentschieden!'
+                  : (amICheckmated ? 'Du wurdest mattgesetzt. Du hast verloren!' : 'Du hast gewonnen!')}
             </p>
-            <button className="btn" onClick={() => navigate('/')}>Zurück zur Lobby</button>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button className="btn btn-secondary" onClick={() => setHideGameOverModal(true)}>Brett ansehen</button>
+              <button className="btn" onClick={() => navigate('/')}>Zurück zur Lobby</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showRulesModal && (
+        <div className="modal-overlay" onClick={() => setShowRulesModal(false)} style={{ zIndex: 1000, background: 'rgba(0,0,0,0.8)' }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', border: '1px solid var(--border)', maxWidth: '800px', width: '90%', padding: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0 }}>Spielregeln</h2>
+              <button className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }} onClick={() => setShowRulesModal(false)}>✖</button>
+            </div>
+            <img src={`${import.meta.env.BASE_URL}icons/rules.jpg`} alt="Spielregeln" style={{ width: '100%', height: 'auto', borderRadius: '4px' }} />
           </div>
         </div>
       )}
