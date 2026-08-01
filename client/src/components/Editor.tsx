@@ -294,12 +294,16 @@ export const Editor: React.FC = () => {
   const pushToGithub = async (fileData: any, token: string, isPuzzle: boolean) => {
     setIsSaving(true);
     try {
+      const cleanToken = token.replace(/\s+/g, '');
+      if (!/^[a-zA-Z0-9_]+$/.test(cleanToken)) {
+         throw new Error('Das Token enthält ungültige Zeichen! Bitte erstelle ein neues auf GitHub und kopiere es sauber.');
+      }
       const filePath = isPuzzle ? 'server/puzzles.json' : 'server/setups.json';
       const apiUrl = `https://api.github.com/repos/whennig2000/shogitool/contents/${filePath}`;
       
       const getRes = await fetch(`${apiUrl}?t=${Date.now()}`, {
         headers: { 
-          'Authorization': `Bearer ${token.trim()}`,
+          'Authorization': `Bearer ${cleanToken}`,
           'Cache-Control': 'no-cache'
         }
       });
@@ -325,7 +329,7 @@ export const Editor: React.FC = () => {
       const putRes = await fetch(apiUrl, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token.trim()}`,
+          'Authorization': `Bearer ${cleanToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
