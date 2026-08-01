@@ -299,7 +299,7 @@ export const Editor: React.FC = () => {
       
       const getRes = await fetch(`${apiUrl}?t=${Date.now()}`, {
         headers: { 
-          'Authorization': `token ${token}`,
+          'Authorization': `Bearer ${token.trim()}`,
           'Cache-Control': 'no-cache'
         }
       });
@@ -325,7 +325,7 @@ export const Editor: React.FC = () => {
       const putRes = await fetch(apiUrl, {
         method: 'PUT',
         headers: {
-          'Authorization': `token ${token}`,
+          'Authorization': `Bearer ${token.trim()}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -348,7 +348,14 @@ export const Editor: React.FC = () => {
       setShowTokenPrompt(false);
       navigate('/');
     } catch (e: any) {
-      alert(e.message);
+      if (e.name === 'TypeError' || e.message.includes('NetworkError') || e.message.includes('fetch')) {
+         localStorage.removeItem('github_token');
+         setGithubToken('');
+         alert('Netzwerk-Fehler (evtl. ungültiges Token Format oder CORS). Token wurde zurückgesetzt. Bitte versuche es erneut und achte darauf, dass keine Leerzeichen im Token sind.');
+         setShowTokenPrompt(true);
+      } else {
+         alert(e.message);
+      }
     } finally {
       setIsSaving(false);
     }
