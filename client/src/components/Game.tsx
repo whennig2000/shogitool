@@ -439,7 +439,7 @@ export const Game = () => {
               <div ref={chatEndRef} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--border)' }}>
-              {gameState.playerNames.gote === 'Bot (Gote)' && !isGameOver && (
+              {gameState.isPuzzleMatch && !isGameOver && (
                 <div style={{ padding: '0.5rem', display: 'flex', justifyContent: 'center' }}>
                   <button 
                     className="btn btn-secondary" 

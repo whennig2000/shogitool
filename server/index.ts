@@ -287,7 +287,8 @@ function loadPuzzle(roomId: string, puzzleIndex: number, retry = false) {
     lastMove: null,
     promotionZoneSize: puzzle.promotionZoneSize || room.gameState.promotionZoneSize,
     timerEnabled: false,
-    timerConfigured: true
+    timerConfigured: true,
+    isPuzzleMatch: true
   }));
   
   room.puzzleState.movesRemaining = puzzle.movesToMate;

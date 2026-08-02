@@ -50,6 +50,7 @@ export interface GameState {
   timerEnabled?: boolean;
   timerConfigured?: boolean;
   timeLeft?: { sente: number; gote: number };
+  isPuzzleMatch?: boolean;
 }
 
 export interface CustomSetup {
