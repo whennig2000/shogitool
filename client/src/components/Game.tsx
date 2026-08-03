@@ -311,6 +311,24 @@ export const Game = () => {
     socket.emit('setTimer', roomId, seconds);
   };
 
+  useEffect(() => {
+    if (gameState) {
+      const opponentRole = role === 'sente' ? 'gote' : 'sente';
+      const amIInCheck = isKingInCheck(gameState.board, role);
+      const opponentInCheck = isKingInCheck(gameState.board, opponentRole);
+      const myLegalMoves = hasAnyLegalMoves(gameState.board, role, gameState.captured[role]);
+      const opponentLegalMoves = hasAnyLegalMoves(gameState.board, opponentRole, gameState.captured[opponentRole]);
+      const amICheckmated = amIInCheck && !myLegalMoves;
+      const opponentCheckmated = opponentInCheck && !opponentLegalMoves;
+      const isStalemate = (!amIInCheck && !myLegalMoves) || (!opponentInCheck && !opponentLegalMoves);
+      const timerLoser = (gameState as any).timerExpired ? (gameState as any).winner === role ? opponentRole : role : null;
+      
+      if (amICheckmated || opponentCheckmated || isStalemate || timerLoser !== null) {
+        socket.emit('gameOver', roomId);
+      }
+    }
+  }, [gameState, role, roomId]);
+
   if (!gameState) return <div className="lobby">Lade Spiel...</div>;
 
   const opponentRole = role === 'sente' ? 'gote' : 'sente';
@@ -328,6 +346,8 @@ export const Game = () => {
   const isStalemate = amIStalemated || opponentStalemated;
   const timerLoser = (gameState as any).timerExpired ? (gameState as any).winner === role ? (role === 'sente' ? 'gote' : 'sente') : role : null;
   const isGameOver = amICheckmated || opponentCheckmated || isStalemate || timerLoser !== null;
+
+
 
   const formatTime = (seconds?: number) => {
     if (seconds === undefined) return null;
@@ -486,6 +506,17 @@ export const Game = () => {
                   </button>
                 </div>
               )}
+              {isGameOver && (
+                <div style={{ padding: '0.5rem', display: 'flex', justifyContent: 'center' }}>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={() => setShowRematchModal(true)}
+                    style={{ width: '100%', fontSize: '0.9rem', fontWeight: 'bold' }}
+                  >
+                    🔄 Neues Spiel anfragen
+                  </button>
+                </div>
+              )}
               <form className="chat-input" onSubmit={sendChat}>
                 <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Nachricht..." />
                 <button type="submit">Senden</button>
@@ -509,6 +540,7 @@ export const Game = () => {
                   : (amICheckmated ? 'Du wurdest mattgesetzt. Du hast verloren!' : 'Du hast gewonnen!')}
             </p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button className="btn btn-primary" onClick={() => { setShowRematchModal(true); setHideGameOverModal(true); }}>🔄 Neues Spiel anfragen</button>
               <button className="btn btn-secondary" onClick={() => setHideGameOverModal(true)}>Brett ansehen</button>
               <button className="btn" onClick={() => navigate('/')}>Zurück zur Lobby</button>
             </div>

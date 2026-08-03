@@ -404,6 +404,14 @@ io.on('connection', (socket: Socket) => {
     console.log(`${socket.id} joined room ${roomId}`);
   });
 
+  socket.on('gameOver', (roomId: string) => {
+    const room = rooms.get(roomId);
+    if (room && room.timerInterval) {
+      clearInterval(room.timerInterval);
+      room.timerInterval = undefined;
+    }
+  });
+
   socket.on('updateState', (roomId: string, newState: any) => {
     const room = rooms.get(roomId);
     if (room) {
