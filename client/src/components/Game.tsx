@@ -3,7 +3,8 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { socket } from './Lobby';
 import type { GameState, Piece, Player, Position } from '../../../shared/types';
 import { getValidMoves, canPromote, getPromotedType, getDemotedType, getValidDrops, isKingInCheck, hasAnyLegalMoves } from '../../../shared/movement';
-import { createPiece } from '../../../shared/constants';
+import { createPiece, getInitialBoard } from '../../../shared/constants';
+import type { CustomSetup } from '../../../shared/types';
 import { Settings, getDisplayMode } from './Settings';
 import { Board } from './Board';
 import { Komadai } from './Komadai';
@@ -31,6 +32,8 @@ export const Game = () => {
   const [myNameInput, setMyNameInput] = useState('');
   const [botDifficulty, setBotDifficulty] = useState<'easy'|'greedy'|'puzzle'>('easy');
   const [opponentConnected, setOpponentConnected] = useState(false);
+  const [opponentConnectionLost, setOpponentConnectionLost] = useState(false);
+  const [showRematchModal, setShowRematchModal] = useState(false);
   
   // Interaction
   const [selectedPos, setSelectedPos] = useState<Position | null>(null);
@@ -63,6 +66,7 @@ export const Game = () => {
       }
       setGameState(res.gameState);
       setOpponentConnected(res.opponentConnected);
+      setOpponentConnectionLost(false);
       setMyNameInput(res.gameState.playerNames[role]);
     });
 
@@ -78,11 +82,26 @@ export const Game = () => {
     socket.on('playerJoined', (data) => {
       console.log('Player joined:', data.role);
       setOpponentConnected(true);
+      setOpponentConnectionLost(false);
     });
 
     socket.on('playerDisconnected', (data) => {
       alert(`${data.role === 'sente' ? 'Player 1' : 'Player 2'} hat das Spiel verlassen.`);
       setOpponentConnected(false);
+      setOpponentConnectionLost(false);
+    });
+
+    socket.on('playerConnectionLost', (data) => {
+      if (data.role !== role) {
+        setOpponentConnectionLost(true);
+      }
+    });
+
+    socket.on('playerConnectionRestored', (data) => {
+      if (data.role !== role) {
+        setOpponentConnectionLost(false);
+        setOpponentConnected(true);
+      }
     });
 
     socket.on('syncTime', (timeLeft: { sente: number, gote: number }) => {
@@ -97,6 +116,11 @@ export const Game = () => {
     socket.on('chatMessage', (msg: ChatMessage) => {
       setChatMessages(prev => [...prev, msg]);
     });
+    
+
+    
+    // Attach to global window object so chat message onClick can call it easily?
+    // Actually we can just map the options in the JSX rendering of chat messages.
 
     socket.on('showHint', (move) => {
       setHintMove({ from: move.from, to: move.to });
@@ -106,6 +130,8 @@ export const Game = () => {
       socket.off('stateUpdated');
       socket.off('playerJoined');
       socket.off('playerDisconnected');
+      socket.off('playerConnectionLost');
+      socket.off('playerConnectionRestored');
       socket.off('syncTime');
       socket.off('timeExpired');
       socket.off('chatMessage');
@@ -354,7 +380,11 @@ export const Game = () => {
       <div className="game-layout">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontWeight: 'bold' }}>Gegner: {gameState.playerNames[opponentRole]}</div>
+            <div style={{ fontWeight: 'bold' }}>
+              Gegner: {gameState.playerNames[opponentRole]}
+              {!opponentConnected && !opponentConnectionLost && gameState.playerNames.gote !== 'Bot (Gote)' && <span style={{ color: '#ef4444', marginLeft: '0.5rem', fontSize: '0.8rem' }}>(Nicht verbunden)</span>}
+              {opponentConnectionLost && <span style={{ color: '#f59e0b', marginLeft: '0.5rem', fontSize: '0.8rem' }}>(Verbindung getrennt, wartet auf Reconnect...)</span>}
+            </div>
             {gameState.timeLeft && (
               <div style={{ background: '#1e293b', padding: '0.5rem 1rem', borderRadius: '4px', fontFamily: 'monospace', fontSize: '1.5rem', color: gameState.turn === opponentRole ? '#ef4444' : 'white' }}>
                 {formatTime(gameState.timeLeft[opponentRole])}
@@ -491,6 +521,43 @@ export const Game = () => {
         </div>
       )}
 
+      {showRematchModal && (
+        <RematchModal 
+           onClose={() => setShowRematchModal(false)}
+           onSend={(setupId, timer) => {
+              setShowRematchModal(false);
+              
+              // We need to fetch the setup or use standard
+              if (setupId === 'standard') {
+                 const newState = {
+                    board: getInitialBoard(),
+                    turn: 'sente',
+                    captured: { sente: [], gote: [] },
+                    playerNames: gameState.playerNames,
+                    promotionZoneSize: 3,
+                 };
+                 socket.emit('requestRematch', roomId, newState, timer);
+              } else {
+                 fetch('https://raw.githubusercontent.com/whennig2000/shogitool/main/server/setups.json?t=' + Date.now())
+                   .then(res => res.json())
+                   .then(setups => {
+                      const setup = setups.find((s: any) => s.id === setupId);
+                      if (setup) {
+                         const newState = {
+                            board: setup.board,
+                            turn: 'sente',
+                            captured: { sente: [], gote: [] },
+                            playerNames: gameState.playerNames,
+                            promotionZoneSize: setup.promotionZoneSize || 1,
+                         };
+                         socket.emit('requestRematch', roomId, newState, timer);
+                      }
+                   });
+              }
+           }}
+        />
+      )}
+
       {pendingPromotion && (
         <div className="modal-overlay">
           <div className="modal">
@@ -566,6 +633,65 @@ export const Game = () => {
         </div>
       )}
 
+    </div>
+  );
+};
+
+
+const RematchModal = ({ onClose, onSend }: { onClose: () => void, onSend: (setupId: string, timer: number | null) => void }) => {
+  const [customSetups, setCustomSetups] = useState<CustomSetup[]>([]);
+  const [selectedSetupId, setSelectedSetupId] = useState<string>('standard');
+  const [timerChoice, setTimerChoice] = useState<string>('none');
+
+  useEffect(() => {
+    fetch('https://raw.githubusercontent.com/whennig2000/shogitool/main/server/setups.json?t=' + Date.now())
+      .then(res => res.json())
+      .then(data => setCustomSetups(data))
+      .catch(err => console.error("Could not load setups", err));
+  }, []);
+
+  const handleSend = () => {
+    let timer = null;
+    if (timerChoice === '60') timer = 60;
+    if (timerChoice === '300') timer = 300;
+    if (timerChoice === '600') timer = 600;
+    onSend(selectedSetupId, timer);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <h3>Neues Spiel vorschlagen</h3>
+        
+        <label style={{ display: 'block', marginTop: '1rem', textAlign: 'left' }}>Board:</label>
+        <select 
+          value={selectedSetupId} 
+          onChange={e => setSelectedSetupId(e.target.value)}
+          style={{ width: '100%', padding: '0.75rem', marginTop: '0.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '8px' }}
+        >
+          <option value="standard">Standard 9x9 Shogi</option>
+          {customSetups.map(s => (
+            <option key={s.id} value={s.id}>{s.name} ({s.width}x{s.height})</option>
+          ))}
+        </select>
+        
+        <label style={{ display: 'block', marginTop: '1rem', textAlign: 'left' }}>Bedenkzeit:</label>
+        <select 
+          value={timerChoice} 
+          onChange={e => setTimerChoice(e.target.value)}
+          style={{ width: '100%', padding: '0.75rem', marginTop: '0.5rem', marginBottom: '1.5rem', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '8px' }}
+        >
+          <option value="none">Kein Timer</option>
+          <option value="60">1 Minute pro Spieler</option>
+          <option value="300">5 Minuten pro Spieler</option>
+          <option value="600">10 Minuten pro Spieler</option>
+        </select>
+        
+        <div style={{ display: 'flex', gap: '1rem' }}>
+           <button className="btn btn-secondary" onClick={onClose} style={{ flex: 1 }}>Abbrechen</button>
+           <button className="btn" onClick={handleSend} style={{ flex: 1 }}>Anfragen</button>
+        </div>
+      </div>
     </div>
   );
 };

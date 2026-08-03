@@ -38,6 +38,7 @@ interface Room {
     currentMoveIndex?: number;
   };
   timerInterval?: NodeJS.Timeout;
+  disconnectTimeouts?: Record<string, NodeJS.Timeout>;
   lastTick?: number;
 }
 
@@ -364,6 +365,26 @@ io.on('connection', (socket: Socket) => {
       return cb({ error: 'Room not found' });
     }
 
+    // Try to reconnect if there's a disconnected player timeout pending
+    if (room.disconnectTimeouts) {
+       if (room.disconnectTimeouts['sente'] && !room.sentePlayer) {
+          clearTimeout(room.disconnectTimeouts['sente']);
+          delete room.disconnectTimeouts['sente'];
+          room.sentePlayer = socket.id;
+          socket.join(roomId);
+          io.to(roomId).emit('playerConnectionRestored', { role: 'sente' });
+          return cb({ roomId, role: 'sente', gameState: room.gameState, opponentConnected: !!room.gotePlayer });
+       }
+       if (room.disconnectTimeouts['gote'] && !room.gotePlayer) {
+          clearTimeout(room.disconnectTimeouts['gote']);
+          delete room.disconnectTimeouts['gote'];
+          room.gotePlayer = socket.id;
+          socket.join(roomId);
+          io.to(roomId).emit('playerConnectionRestored', { role: 'gote' });
+          return cb({ roomId, role: 'gote', gameState: room.gameState, opponentConnected: !!room.sentePlayer });
+       }
+    }
+
     if (room.sentePlayer === socket.id || room.gotePlayer === socket.id) {
        const role = room.sentePlayer === socket.id ? 'sente' : 'gote';
        const opponentConnected = role === 'sente' ? !!room.gotePlayer : !!room.sentePlayer;
@@ -599,24 +620,122 @@ io.on('connection', (socket: Socket) => {
     }
   });
 
+    socket.on('requestRematch', (roomId: string, newState: any, timerConfig: number | null) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+    
+    // Store requested config temporarily in the room
+    room.rematchConfig = { newState, timerConfig };
+    
+    // Send a message to the other player
+    const requester = room.sentePlayer === socket.id ? room.gameState.playerNames.sente : room.gameState.playerNames.gote;
+    const opponent = room.sentePlayer === socket.id ? room.gotePlayer : room.sentePlayer;
+    
+    // If bot match, auto-decline (bots don't rematch this way)
+    if (room.isBotMatch) {
+       io.to(roomId).emit('chatMessage', { role: 'system', message: 'Der Bot kann keine direkten Revanche-Anfragen annehmen. Bitte erstelle ein neues Spiel.' });
+       return;
+    }
+
+    if (opponent) {
+      io.to(opponent).emit('chatMessage', { 
+        role: 'system', 
+        message: `${requester} möchte ein neues Spiel spielen! (Timer: ${timerConfig ? timerConfig + 's' : 'Keiner'})`,
+        options: [
+          { label: 'Annehmen', value: 'accept_rematch' },
+          { label: 'Ablehnen', value: 'decline_rematch' }
+        ]
+      });
+      socket.emit('chatMessage', { role: 'system', message: 'Anfrage auf neues Spiel gesendet. Warte auf Antwort...' });
+    }
+  });
+
+  socket.on('acceptRematch', (roomId: string) => {
+     const room = rooms.get(roomId);
+     if (!room || !room.rematchConfig) return;
+     
+     room.gameState = room.rematchConfig.newState;
+     
+     if (room.timerInterval) {
+        clearInterval(room.timerInterval);
+     }
+     
+     const seconds = room.rematchConfig.timerConfig;
+     if (seconds === null) {
+       room.gameState.timerEnabled = false;
+       delete room.gameState.timeLeft;
+       room.gameState.timerConfigured = true;
+     } else {
+       room.gameState.timerEnabled = true;
+       room.gameState.timerConfigured = true;
+       room.gameState.timeLeft = { sente: seconds, gote: seconds };
+       
+       room.lastTick = Date.now();
+       room.timerInterval = setInterval(() => {
+         if (!room.sentePlayer || !room.gotePlayer) return;
+         const now = Date.now();
+         const delta = (now - room.lastTick) / 1000;
+         room.lastTick = now;
+         
+         const turn = room.gameState.turn;
+         if (room.gameState.timeLeft && room.gameState.timeLeft[turn] > 0) {
+           room.gameState.timeLeft[turn] -= delta;
+           if (room.gameState.timeLeft[turn] <= 0) {
+             room.gameState.timeLeft[turn] = 0;
+             clearInterval(room.timerInterval);
+             io.to(roomId).emit('timeExpired', turn);
+           }
+           io.to(roomId).emit('syncTime', room.gameState.timeLeft);
+         }
+       }, 1000);
+     }
+     
+     io.to(roomId).emit('stateUpdated', room.gameState);
+     io.to(roomId).emit('chatMessage', { role: 'system', message: 'Neues Spiel gestartet!' });
+     delete room.rematchConfig;
+  });
+
+  socket.on('declineRematch', (roomId: string) => {
+     const room = rooms.get(roomId);
+     if (!room) return;
+     const opponent = room.sentePlayer === socket.id ? room.gotePlayer : room.sentePlayer;
+     if (opponent) {
+        io.to(opponent).emit('chatMessage', { role: 'system', message: 'Dein Gegner hat die Anfrage auf ein neues Spiel abgelehnt.' });
+     }
+     if (room.rematchConfig) delete room.rematchConfig;
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
     rooms.forEach((room, roomId) => {
       if (room.sentePlayer === socket.id || room.gotePlayer === socket.id) {
-         io.to(room.id).emit('playerDisconnected', { 
-           role: room.sentePlayer === socket.id ? 'sente' : 'gote'
-         });
+         const role = room.sentePlayer === socket.id ? 'sente' : 'gote';
          
-         if (room.sentePlayer === socket.id) room.sentePlayer = null;
-         if (room.gotePlayer === socket.id && room.gotePlayer !== 'bot') room.gotePlayer = null;
+         // Notify the room that the player lost connection (grace period started)
+         io.to(room.id).emit('playerConnectionLost', { role });
          
-         if (room.timerInterval && (!room.sentePlayer || !room.gotePlayer)) {
-            clearInterval(room.timerInterval);
-         }
+         if (!room.disconnectTimeouts) room.disconnectTimeouts = {};
+         
+         // Clear their player ID so joinRoom can re-assign it
+         if (role === 'sente') room.sentePlayer = null;
+         if (role === 'gote' && room.gotePlayer !== 'bot') room.gotePlayer = null;
+         
+         // Set a 60-second timeout before officially disconnecting them
+         room.disconnectTimeouts[role] = setTimeout(() => {
+             io.to(room.id).emit('playerDisconnected', { role });
+             
+             if (room.disconnectTimeouts) {
+                 delete room.disconnectTimeouts[role];
+             }
+             
+             if (room.timerInterval && (!room.sentePlayer || !room.gotePlayer)) {
+                clearInterval(room.timerInterval);
+             }
 
-         if (!room.sentePlayer && (!room.gotePlayer || room.gotePlayer === 'bot')) {
-           rooms.delete(room.id);
-         }
+             if (!room.sentePlayer && (!room.gotePlayer || room.gotePlayer === 'bot')) {
+               rooms.delete(room.id);
+             }
+         }, 60000); // 60 seconds grace period
       }
     });
   });
