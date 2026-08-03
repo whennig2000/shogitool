@@ -59,7 +59,7 @@ export const Game = () => {
 
   useEffect(() => {
     const doJoin = () => {
-      socket.emit('joinRoom', roomId, (res: any) => {
+      socket.emit('joinRoom', roomId, role, (res: any) => {
         if (res.error) {
           alert(res.error);
           navigate('/');
