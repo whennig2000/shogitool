@@ -58,17 +58,22 @@ export const Game = () => {
   }, []);
 
   useEffect(() => {
-    socket.emit('joinRoom', roomId, (res: any) => {
-      if (res.error) {
-        alert(res.error);
-        navigate('/');
-        return;
-      }
-      setGameState(res.gameState);
-      setOpponentConnected(res.opponentConnected);
-      setOpponentConnectionLost(false);
-      setMyNameInput(res.gameState.playerNames[role]);
-    });
+    const doJoin = () => {
+      socket.emit('joinRoom', roomId, (res: any) => {
+        if (res.error) {
+          alert(res.error);
+          navigate('/');
+          return;
+        }
+        setGameState(res.gameState);
+        setOpponentConnected(res.opponentConnected);
+        setOpponentConnectionLost(false);
+        setMyNameInput(res.gameState.playerNames[role]);
+      });
+    };
+
+    doJoin();
+    socket.on('connect', doJoin);
 
     socket.on('stateUpdated', (newState: GameState) => {
       setGameState(newState);
@@ -127,6 +132,7 @@ export const Game = () => {
     });
 
     return () => {
+      socket.off('connect', doJoin);
       socket.off('stateUpdated');
       socket.off('playerJoined');
       socket.off('playerDisconnected');
