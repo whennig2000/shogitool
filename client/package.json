@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.23.4"
+  },
   "homepage": "https://whennig2000.github.io/shogitool",
   "scripts": {
     "dev": "vite",
@@ -13,7 +16,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@rolldown/binding-darwin-arm64": "^1.1.5",
+    "@rolldown/binding-darwin-arm64": "^1.2.15",
     "lucide-react": "^1.27.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
@@ -28,6 +31,6 @@
     "gh-pages": "^6.3.0",
     "oxlint": "^1.71.0",
     "typescript": "~6.0.2",
-    "vite": "^8.1.1"
+    "vite": "^8.1.6"
   }
 }
